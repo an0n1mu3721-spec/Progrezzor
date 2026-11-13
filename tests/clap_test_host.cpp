@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <set>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -1335,6 +1336,167 @@ int main (int argc, char** argv)
         s.keyOff (keyOfPad (2));
         s.blocks (2);
         check (s.out.sounding() == 0 && s.out.clean(), "and it stops when the key is let go: nothing hangs");
+    }
+
+    {
+        // A key is pressed, held, let go, and the next key pressed: with the host stopped, and with the host playing a progression
+        // (the loop plays under the keys). The bass note is left out here: it starts with the chord on purpose.
+        const std::vector<BlockSpec> walking = { { 0, 0, 4 }, { 7, 0, 4, 1 }, { 5, 0, 4, 1 }, { 7, 0, 4 } };
+        for (int variant = 0; variant < 2; ++variant)
+        {
+            const bool playing = variant == 1;
+            const bool bass = false;
+            std::printf ("arp from the keyboard (%s, %s): one note at the start of each chord, also when the last key was let go first\n",
+                         playing ? "DAW playing" : "DAW stopped", bass ? "bass on" : "bass off");
+            received.clear();
+            blockSize = 512;
+            Session s;
+            loadState (s.instance, makeState (progressionXml (0, (int) ScaleId::Major, walking)));
+            InEvent arp, bassEvent;
+            paramEvent (s.instance, "Arp", "On", arp);
+            if (bass)
+                paramEvent (s.instance, "Bass Note", "On", bassEvent);
+            s.block (bass ? std::vector<InEvent> { arp, bassEvent } : std::vector<InEvent> { arp });
+            double beat = 0.0;
+            const double bpm = 120.0;
+            const double beatsPerBlock = blockSize * bpm / 60.0 / sampleRate;
+            auto step = [&] (const std::vector<InEvent>& events) {
+                const auto t = transportAt (playing, beat, bpm);
+                s.block (events, playing ? &t : nullptr);
+                beat += beatsPerBlock;
+            };
+            step ({});
+            step ({});
+            bool oneEach = true;
+            bool cleanAll = true;
+            for (int i = 0; i < 4; ++i)
+            {
+                const int key = keyOfPad (i);
+                const uint32_t pressedAt = s.time;
+                const size_t before = received.size();
+                step ({ asInEvent (makeMidi (0, 0x90, (uint8_t) key, 100)) });
+                int starts = 0;
+                std::string names;
+                for (const auto& o : noteOnsFrom (before))
+                    if (o.time >= pressedAt && o.time < pressedAt + blockSize)
+                    {
+                        ++starts;
+                        names += " " + std::to_string (o.note) + "@" + std::to_string (o.time - pressedAt);
+                    }
+                // A note that the loop already sounds is not struck again (the same note is only sent once): so with the loop
+                // playing a chord may start with none, but never with two
+                if (starts > 1 || (! playing && starts != 1))
+                {
+                    oneEach = false;
+                    std::printf ("  info: chord %d starts with %d note ons:%s\n", i + 1, starts, names.c_str());
+                }
+                step ({});
+                step ({});
+                step ({ asInEvent (makeMidi (0, 0x80, (uint8_t) key, 0)) }); // let go first
+                step ({});
+                step ({});
+                cleanAll &= s.out.clean();
+            }
+            check (oneEach, "each chord starts with one note (the arp's first note), never two");
+            check (cleanAll, "every key that is let go stops its note: nothing hangs, no stray offs");
+        }
+        // The same, with the key let go and the next pressed inside one block, at different places in it
+        for (uint32_t offAt : { 0u, 100u, 300u })
+        {
+            std::printf ("arp from the keyboard: let go at %u and the next key pressed in the same block\n", offAt);
+            received.clear();
+            blockSize = 512;
+            Session s;
+            InEvent arp;
+            paramEvent (s.instance, "Arp", "On", arp);
+            s.block ({ arp });
+            s.blocks (3);
+            bool oneEach = true;
+            for (int i = 0; i < 3; ++i)
+            {
+                const int first = keyOfPad (i), second = keyOfPad (i + 1);
+                s.block ({ asInEvent (makeMidi (0, 0x90, (uint8_t) first, 100)) });
+                s.blocks (2);
+                const uint32_t pressedAt = s.time + 300;
+                const size_t before = received.size();
+                s.block ({ asInEvent (makeMidi (offAt, 0x80, (uint8_t) first, 0)),
+                           asInEvent (makeMidi (300, 0x90, (uint8_t) second, 100)) });
+                int starts = 0;
+                for (const auto& o : noteOnsFrom (before))
+                    if (o.time >= pressedAt && o.time < s.time)
+                        ++starts;
+                if (starts != 1)
+                {
+                    oneEach = false;
+                    std::printf ("  info: chord %d starts with %d note ons\n", i + 2, starts);
+                }
+                s.blocks (2);
+            }
+            check (oneEach, "the new chord starts with exactly one note");
+            s.block ({ asInEvent (makeMidi (0, 0x80, (uint8_t) keyOfPad (3), 0)) });
+            s.blocks (3);
+            check (s.out.sounding() == 0 && s.out.clean(), "nothing hangs");
+        }
+    }
+
+    {
+        std::printf ("loop with the arp across chord changes (C, Em, F at 135 BPM, DAW playing): no doubled or stray notes\n");
+        const std::vector<BlockSpec> cEmF = { { 0, 0, 4 }, { 4, 1, 4 }, { 5, 0, 4 } };
+        for (uint32_t size : { 512u, 441u, 1024u, 256u })
+        {
+            received.clear();
+            blockSize = size;
+            Session s;
+            loadState (s.instance, makeState (progressionXml (0, (int) ScaleId::Major, cEmF)));
+            InEvent arp, style, rate;
+            paramEvent (s.instance, "Arp", "On", arp);
+            paramEvent (s.instance, "Arp Pattern", "Up", style);
+            paramEvent (s.instance, "Arp Speed", "Normal", rate);
+            s.block ({ arp, style, rate });
+            double beat = 0.0;
+            const double bpm = 135.0;
+            const double beatsPerBlock = size * bpm / 60.0 / sampleRate;
+            const size_t before = received.size();
+            const uint32_t startTime = s.time;
+            for (int b = 0; b < (int) std::ceil (16.0 / beatsPerBlock); ++b)
+            {
+                const auto t = transportAt (true, beat, bpm);
+                s.block ({}, &t);
+                beat += beatsPerBlock;
+            }
+            std::set<int> sounding;
+            int doubled = 0, stray = 0;
+            for (size_t i = before; i < received.size(); ++i)
+            {
+                const auto& e = received[i];
+                const int status = e.data[0] & 0xf0, note = e.data[1];
+                const bool on = status == 0x90 && e.data[2] > 0;
+                const bool off = status == 0x80 || (status == 0x90 && e.data[2] == 0);
+                const double atBeat = ((double) e.header.time - startTime) / sampleRate * bpm / 60.0;
+                if (on)
+                {
+                    if (sounding.count (note))
+                    {
+                        ++doubled;
+                        if (doubled <= 5)
+                            std::printf ("  info: note %d struck again while sounding at beat %.3f\n", note, atBeat);
+                    }
+                    sounding.insert (note);
+                }
+                else if (off)
+                {
+                    if (! sounding.count (note))
+                    {
+                        ++stray;
+                        if (stray <= 5)
+                            std::printf ("  info: stray note off %d at beat %.3f\n", note, atBeat);
+                    }
+                    sounding.erase (note);
+                }
+            }
+            std::printf ("  info: block %u: %d doubled, %d stray, %zu still on at the end\n", size, doubled, stray, sounding.size());
+            check (doubled == 0 && stray == 0, "every note on and off matches: no doubled notes, no stray offs");
+        }
     }
 
     entry->deinit();
