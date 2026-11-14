@@ -216,9 +216,9 @@ Henrik ønskede en Learn-knap (2026-11-07), og at brugeren skal spille de RIGTIG
 - Am:0.5: 1 blok på ½ takt.
 - Am:0.5*2: 2 blokke på ½ takt hver.
 
-Takt-notation (Henrik, 2026-11-08): Indeholder teksten et |, læses akkord-diagrammet takt for takt, og linjeskift og ekstra mellemrum ignoreres (så et diagram kan sættes ind). `| C | Am | F | G |`: hver takt er én blok på 1 takt. `| C G |`: to akkorder i samme takt deler den, to blokke på ½ (en takt rummer højst to, den tredje markeres med rødt). `%` eller `/` i en takt gentager forrige akkord. Et ord med egen længde (`C:2`) beholder den, og den gamle notation (Am*2, Am:2) virker også inde i takterne. Uden | læses teksten som før. Ukendte ord markeres med rødt, og resten virker. Teksten, der vises igen, er stadig i den gamle notation, blok for blok.
+Takt-notation (Henrik, 2026-11-08): Indeholder teksten et |, læses akkord-diagrammet takt for takt, og linjeskift og ekstra mellemrum ignoreres (så et diagram kan sættes ind). `| C | Am | F | G |`: hver takt er én blok på 1 takt. `| C G |`: to akkorder i samme takt deler den, to blokke på ½ (en takt rummer højst to, den tredje markeres med rødt). `%` eller `/` i en takt gentager forrige akkord. Et ord med egen længde (`C:2`) beholder den, og den gamle notation (Am*2, Am:2) virker også inde i takterne. Uden | læses teksten som før. Ukendte ord markeres med rødt, og resten virker. Teksten, der vises, når man åbner Quick-text igen, er altid i takt-notation (Henrik, 2026-11-14), uanset hvordan den blev skrevet: `| Am | Am | F F | C:2 |`. Begge måder kan stadig skrives ind (Am*2, Am:2 og takt-notation), men visningen er den samme som Copy as text. Der er ingen indstilling for det.
 
-Reglen er: * betyder antal, og : betyder længde. Tekstfeltet viser altid blokkene præcis, som de er, så en blok på 2 takter vises som Am:2. En stavefejl markeres med rødt og stopper ikke resten.
+Reglen er: * betyder antal, og : betyder længde. Tekstfeltet viser altid blokkene præcis, som de er, i takt-notation, så en blok på 2 takter vises som `| Am:2 |`. En stavefejl markeres med rødt og stopper ikke resten.
 
 ## ChordPro-import
 

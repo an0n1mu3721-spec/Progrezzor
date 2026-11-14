@@ -10,11 +10,11 @@ hovedopgaven, som er at generere MIDI. CLAP er note-effect, så det sidder før 
 VST3 ikke har en MIDI-effekt-kategori, og plugin'et både laver noder og preview-lyd. Ændr det ikke uden at spørge." og
 retter de gamle linjer om mulighed A og B. Branchen merges ikke før du siger det.
 
-- [ ] Bitwig (Linux), CLAP: vises stadig som Note FX, spiller synthen efter sig, og preview kan høres.
-- [ ] Bitwig (Linux), VST3: vises som instrument, sender MIDI videre til en synth, og preview kan høres.
-- [ ] REAPER (Linux), VST3: sender MIDI videre til en synth, og preview kan høres.
-- [ ] Bitwig og REAPER (Linux): Sound = Off, så preview ikke klinger sammen med synthen. MIDI sendes stadig.
-- [ ] Bitwig og REAPER (Linux): træk en rundgang ud som MIDI-fil, både fra CLAP og fra VST3.
+- [x] Bitwig (Linux), CLAP: vises stadig som Note FX, spiller synthen efter sig, og preview kan høres.
+- [x] Bitwig (Linux), VST3: vises som instrument, sender MIDI videre til en synth, og preview kan høres.
+- [x] REAPER (Linux), VST3: sender MIDI videre til en synth, og preview kan høres.
+- [x] Bitwig og REAPER (Linux): Sound = Off, så preview ikke klinger sammen med synthen. MIDI sendes stadig.
+- [x] Bitwig og REAPER (Linux): træk en rundgang ud som MIDI-fil, både fra CLAP og fra VST3.
 - [ ] Ableton Live (Windows): VST3 kan sættes på et MIDI-spor, og et andet spor kan få MIDI fra den via MIDI From.
       (Kan først testes, når der er et Windows-build.)
 
@@ -77,7 +77,7 @@ Kræver et MIDI-tastatur.
 - [x] Padsene er uændrede (ingen skråstreg på dem).
 - [x] Settings (tandhjulet): "Inversions in suggestions" er sat som standard. Slå den fra og tryk Suggest mange gange: aldrig en skråstreg. Luk og åbn projektet igen: valget er husket.
 - [x] Ændr en pad til en variant (fx G til G7), tryk Suggest: blokken med G bliver G7, ikke G/B.
-- [ ] Træk MIDI ud: tonerne er de samme som dem, du hører, også for G/B (B er den dybeste tone).
+- [x] Træk MIDI ud: tonerne er de samme som dem, du hører, også for G/B (B er den dybeste tone).
 
 ## 2g. Bastone (branch feature/bass-note)
 - [x] Settings (tandhjulet): "Bass note" er slukket som standard. Tænd den og klik på pad 1 til 7: en dyb tone kommer under hver akkord (grundtonen), og akkorden er den samme som før.
@@ -157,6 +157,7 @@ Kræver et MIDI-tastatur.
 - [ ] Tænd Add og klik på en blok: den markeres (pulserende kant), og Delete sletter den. Tryk så en pad: akkorden lægges stadig bagerst, og blokken prøver ikke akkorden.
 - [x] Quick-text med oktaver: `Am+1 F-1 C G+2:2`, derefter Enter.
 - [x] Quick-text: skriv `Gadd Gsus` og tryk Enter. Blokkene skal læses som Gadd9 og Gsus4 (Gadd9 og Gsus4 skrevet fuldt virker som før).
+- [ ] Quick-text: skriv `Am*2 F:0.5*2 C:2` og tryk Enter. Åbn Quick-text igen: teksten står som `| Am | Am | F F | C:2 |`, og rundgangen er den samme.
 - [x] Det nye udseende: er farverne, knapperne og logoet i mål?
 
 ## 4. Kan ikke testes her

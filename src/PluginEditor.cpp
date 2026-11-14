@@ -2292,7 +2292,8 @@ void ProgressionBar::startQuickText()
     clearSelection();
     textMode = true;
     progressionBeforeText = processor.getProgression();
-    textEditor.setText (juce::String (engine::formatQuickText (progressionBeforeText, processor.getKey(), processor.getHostBarBeats())), false);
+    // The text is shown in bar notation (| C | Am | F G |), whatever way it was typed; both ways can still be typed
+    textEditor.setText (progressionAsText(), false);
     updateTextFeedback();
     updateVisibility();
     resized();

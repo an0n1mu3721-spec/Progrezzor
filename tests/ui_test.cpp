@@ -1635,14 +1635,14 @@ int main (int argc, char** argv)
         check (bar.numBlocks() == 4 && bar.getBlock (0)->isVisible(), "the blocks are back");
         check (bar.getNotice().isEmpty() && ! bar.getAllowButton().isVisible(), "no message when everything is in the scale");
 
-        // The text shows the blocks exactly
+        // The text shows the blocks in bar notation, however they were typed
         click(bar.getQuickTextButton());
-        check (bar.getTextEditor().getText() == "Am F C G:2", "the text shows the blocks as they are");
+        check (bar.getTextEditor().getText() == "| Am | F | C | G:2 |", "the text shows the blocks in bar notation");
         bar.getTextEditor().setText ("Am*2 F:0.5*2 C:2", false);
         bar.applyQuickText();
         check (p.size() == 5 && p[1].chord.root == 0 && near (p[2].beats, 2.0) && near (p[3].beats, 2.0) && near (p[4].beats, 8.0), "* and : make blocks");
         click(bar.getQuickTextButton());
-        check (bar.getTextEditor().getText() == "Am Am F:0.5 F:0.5 C:2", "the shortcut is shown as separate blocks");
+        check (bar.getTextEditor().getText() == "| Am | Am | F F | C:2 |", "the shortcut is shown as separate bars, and half bars share a bar");
 
         // A word that cannot be read is marked, the rest is used, and Esc takes it all back
         bar.getTextEditor().setText ("Am Xq F", false);
