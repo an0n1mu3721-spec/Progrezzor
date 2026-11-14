@@ -121,18 +121,25 @@ Kræver et MIDI-tastatur.
 ## 2l. ChordPro-import (branch feature/chordpro-import)
 - [ ] Settings (tandhjulet) > Import ChordPro...: en filvælger åbner (ikke i Play). Vælg en .cho-fil: akkorderne står som tekst i Quick-text-feltet, og rundgangen er uændret.
 - [ ] Enter anvender (en takt pr. akkord), Esc fortryder. Fortryd (Ctrl+Z) tager det tilbage.
-- [ ] En fil med afsnit (verse, chorus, bridge): en liste over afsnit, og kun det valgte kommer i feltet.
+- [ ] En fil med afsnit: ingen liste. Hele sangen kommer i feltet, og afsnitsnavnene ([VERSE], [CHORUS]) står ikke der.
 - [ ] En fil med {key: G}: beskeden "The song says it is in G major. Switch the key?" og en knap. Toneart skiftes kun, når du trykker på knappen.
 - [ ] Træk en .cho-fil ind på rundgangen: det samme som via Settings.
 - [ ] Ukendte akkorder (fx N.C.) er røde, og resten virker. En fil uden akkorder giver beskeden "No chords found in that file."
-- [ ] En lang fil: de første 32 akkorder, og en besked om det.
+- [ ] En fil med 257 akkorder: ingen import, og beskeden "This file has 257 chords. The bar holds 256, so the file is not imported.". Med 256 akkorder kommer alle med.
+
+## 2p. ChordPro: hele sangen, grænser og gæt ved import (branch feature/chordpro-rework)
+- [ ] Importer "Stand by your man", "Suzanne" og "Sultans of Swing" (Settings > Import ChordPro...). Notice-linjen under feltet siger "Read N chords. Skipped: ..." med tal, der giver mening for sangen.
+- [ ] Akkorderne i Quick-text står i sangens rækkefølge. Der er ingen tekst, ingen [VERSE]/[CHORUS]-mærker og ingen kommentarer eller tabs i feltet.
+- [ ] En fil, der nævner capo: notice-linjen slutter med "The file mentions a capo, so the chords are as written."
+- [ ] Uden {key:} og med de fleste akkorder i en anden toneart: kortet "These chords fit X." med Switch og Keep vises straks, mens feltet er åbent. Enter skifter ikke toneart af sig selv.
+- [ ] Afvist fil (fx en fil, der ikke er tekst, eller uden akkorder): beskeden står i notice-linjen, feltet viser rundgangen, som den er, og Enter ændrer ikke noget.
 
 ## 2m. Gæt toneart (branch feature/guess-key)
 - [x] Stå i C Major, tryk på blyanten, skriv `G D C Em Am`, Enter: et kort spørger "These chords fit G Major." med "Switch to G Major" og "Keep C Major". Tonearten er uændret, til du trykker.
 - [?] Switch: tonearten skifter, og akkorderne er stadig G D C Em Am (ikke flyttet). Keep: alt er som før.
 - [x] `Am F C G` giver A Minor, `Am Dm E Am` giver A Minor, `C F G` giver C Major. En rundgang med en lånt akkord, der ikke passer, giver intet spørgsmål.
 - [x] Står du allerede i den toneart, sker der ingenting.
-- [ ] ChordPro-fil med {key:}: ingen gætning. Uden {key:}: gættet kommer, når du trykker Enter.
+- [ ] ChordPro-fil med {key:}: ingen gætning. Uden {key:}: gættet kommer med det samme, når filen læses (se 2p).
 
 ## 2n. Eksport som tekst (branch feature/text-export)
 - [x] Settings > Copy as text: indsæt et sted (fx i en tekst): `| C | Am | F G | G |`. Åbn Quick-text, indsæt det, Enter: samme rundgang.
@@ -157,8 +164,8 @@ Kræver et MIDI-tastatur.
 - [ ] Tænd Add og klik på en blok: den markeres (pulserende kant), og Delete sletter den. Tryk så en pad: akkorden lægges stadig bagerst, og blokken prøver ikke akkorden.
 - [x] Quick-text med oktaver: `Am+1 F-1 C G+2:2`, derefter Enter.
 - [x] Quick-text: skriv `Gadd Gsus` og tryk Enter. Blokkene skal læses som Gadd9 og Gsus4 (Gadd9 og Gsus4 skrevet fuldt virker som før).
-- [ ] Pauser i rundgangen (træk den blanke pad ned): blokken er svag/ghosted. Den bliver tydelig ved mouseover og når den markeres eller spiller.
-- [ ] Quick-text: skriv `Am*2 F:0.5*2 C:2` og tryk Enter. Åbn Quick-text igen: teksten står som `| Am | Am | F F | C:2 |`, og rundgangen er den samme.
+- [x] Pauser i rundgangen (træk den blanke pad ned): blokken er svag/ghosted. Den bliver tydelig ved mouseover og når den markeres eller spiller.
+- [x] Quick-text: skriv `Am*2 F:0.5*2 C:2` og tryk Enter. Åbn Quick-text igen: teksten står som `| Am | Am | F F | C:2 |`, og rundgangen er den samme.
 - [x] Det nye udseende: er farverne, knapperne og logoet i mål?
 
 ## 4. Kan ikke testes her

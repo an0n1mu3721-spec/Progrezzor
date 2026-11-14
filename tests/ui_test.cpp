@@ -3051,6 +3051,7 @@ int main (int argc, char** argv)
         check (bar.importChordProFile (folder.getChildFile ("simple.cho")), "the file is read");
         settle (60);
         check (bar.isInTextMode() && bar.getTextEditor().getText() == "| C | Am | F | G | C | Am | F | G |", "the chords are in the Quick-text field");
+        check (bar.getNotice() == "Read 8 chords. Skipped: 1 directives, 0 notes, 2 chords in comments or tabs, and some text. Check them before you press Enter.", "and the notice says what was read, and to check it");
         check (processor.getProgression() == barBefore, "the bar is not changed before Enter");
         snapshot ("chordpro_text");
         bar.cancelQuickText();
@@ -3063,13 +3064,10 @@ int main (int argc, char** argv)
         processor.undo();
         check (processor.getProgression() == barBefore, "Undo brings the old bar back");
 
-        // Parts: a list, and the one that is picked
-        check (bar.readChordProText (folder.getChildFile ("sections.cho").loadFileAsString()) == 5, "the file with parts has a list of five");
-        bar.useChordProPart (1);
-        check (bar.isInTextMode() && bar.getTextEditor().getText() == "| F | G | C |", "the chorus that was picked is in the field");
-        bar.cancelQuickText();
-        bar.useChordProPart (4);
-        check (bar.getTextEditor().getText() == "| Dm | G |", "and the bridge");
+        // A whole song: the labels are skipped and the chords after them are read, in order, with no question about parts
+        bar.importChordProFile (folder.getChildFile ("labels.cho"));
+        settle (60);
+        check (bar.isInTextMode() && bar.getTextEditor().getText() == "| C | Am | F | G | C | Dm | Em | Am | F | G | Dm | G |", "the whole song is in the field, the labels left out");
         bar.cancelQuickText();
 
         // The key: asked about, never changed by itself
@@ -3109,27 +3107,50 @@ int main (int argc, char** argv)
         processor.undo();
         settle (60);
 
-        // Odd chords are marked in red, the rest is used
+        // Chords that are not chords are left out, and the others are used
         bar.importChordProFile (folder.getChildFile ("unknown.cho"));
+        settle (60);
+        check (bar.isInTextMode() && bar.getTextEditor().getText() == "| C | Am | G7 | C/G | Fmaj7 |", "[N.C.], [Xyz] and [*Coda] are not in the field");
+        snapshot ("chordpro_unknown");
         bar.applyQuickText();
         settle (60);
-        check (bar.isInTextMode() && processor.getProgression().size() == 5 && bar.getNotice().isNotEmpty(), "unknown chords are marked, and the others are used");
-        snapshot ("chordpro_unknown");
-        bar.cancelQuickText();
-        check (processor.getProgression() == barBefore, "Esc takes it all back");
+        check (! bar.isInTextMode() && processor.getProgression().size() == 5, "and the five chords are used");
+        processor.undo();
+        settle (60);
+        check (processor.getProgression() == barBefore, "Undo takes it all back");
 
-        // An empty file, and too many chords
+        // An empty file: refused, the bar is shown as it is and nothing is changed
         bar.importChordProFile (folder.getChildFile ("empty.cho"));
         settle (60);
-        check (bar.isInTextMode() && bar.getTextEditor().getText().isEmpty() && bar.getNotice().contains ("No chords found"), "a file without chords says so, and nothing is changed");
+        check (bar.isInTextMode() && bar.getNotice().contains ("No chords found") && processor.getProgression() == barBefore, "a file without chords is refused, and nothing is changed");
         bar.cancelQuickText();
-        bar.importChordProFile (folder.getChildFile ("toomany.cho"));
+
+        // Too many chords: kMaxBlocks + 1 are refused, kMaxBlocks are used
+        const auto tooMany = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("progrezzor-test-too-many.cho");
+        const auto fullBar = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("progrezzor-test-full-bar.cho");
+        juce::String many, full;
+        for (int i = 0; i < engine::kMaxBlocks + 1; ++i)
+        {
+            many += "[C]w" + juce::String (i) + " ";
+            if (i < engine::kMaxBlocks)
+                full += "[C]w" + juce::String (i) + " ";
+        }
+        check (tooMany.replaceWithText (many) && fullBar.replaceWithText (full), "two test files are written");
+        bar.importChordProFile (tooMany);
         settle (60);
-        check (bar.getNotice().contains ("first 32"), "too many chords: it says that only the first 32 fit");
+        check (bar.getNotice() == "This file has " + juce::String (engine::kMaxBlocks + 1) + " chords. The bar holds " + juce::String (engine::kMaxBlocks) + ", so the file is not imported.",
+               "one more than the bar holds: the file is refused and it says why");
+        check (processor.getProgression() == barBefore, "and the bar is not changed");
+        bar.cancelQuickText();
+        bar.importChordProFile (fullBar);
+        settle (60);
+        check (bar.isInTextMode() && bar.getNotice().startsWith ("Read " + juce::String (engine::kMaxBlocks) + " chords."), "a full bar of chords is read");
         bar.applyQuickText();
         settle (60);
-        check (processor.getProgression().size() == 32, "and the first 32 are used");
+        check (processor.getProgression().size() == (size_t) engine::kMaxBlocks, "and all of them are used");
         processor.undo();
+        tooMany.deleteFile();
+        fullBar.deleteFile();
 
         processor.setProgression (barBefore);
         *processor.keyParam = oldKey;
@@ -3218,11 +3239,14 @@ int main (int argc, char** argv)
         check (! bar.isAskingKey() && processor.keyParam->getIndex() == 0, "a file with {key:}: no guessing (it asked about its key in the text)");
         setKey (9, engine::ScaleId::Minor);
         bar.importChordProFile (folder.getChildFile ("simple.cho")); // C Am F G ..., no key
-        bar.applyQuickText();
         settle (60);
-        check (bar.isAskingKey() && bar.getGuessedKey().tonic == 0 && bar.getGuessedKey().scale == engine::ScaleId::Major, "a file without a key: the chords are guessed (C Major) when they are put in");
+        check (bar.isAskingKey() && bar.getGuessedKey().tonic == 0 && bar.getGuessedKey().scale == engine::ScaleId::Major, "a file without a key: C Major is asked about when the file is read");
+        check (bar.getNotice().startsWith ("Read 8 chords.") && ! bar.getNotice().contains ("fit"), "the notice says what was read; the question is in its card");
+        snapshot ("chordpro_guess");
         bar.getGuessKeepButton().triggerClick();
         settle (60);
+        check (! bar.isAskingKey() && bar.isInTextMode(), "Keep: the question goes, the text stays");
+        bar.cancelQuickText();
 
         processor.setProgression ({});
         setKey (oldKey, (engine::ScaleId) oldScale);

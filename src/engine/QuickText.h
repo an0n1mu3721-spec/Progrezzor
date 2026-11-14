@@ -60,4 +60,8 @@ QuickTextResult parseQuickText (const std::string& text, const Key&, double barB
 // What was read becomes the new progression, but a block that is unchanged at the same place keeps what the text cannot say:
 // its lock, a chosen root position, and whether it was disabled. (The octave is in the text.)
 Progression keepingBlockState (const Progression& old, Progression read);
+
+// A chord name as it is written in a text (C, Am7, F#m, Bb/D): its root (0 = C ... 11 = B) and its kind. False if it is not a
+// chord name that Quick-text knows. The bass note after / must be a note, but need not be in the chord.
+bool parseChordName (const std::string& name, int& root, ChordType& type);
 }

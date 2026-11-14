@@ -268,8 +268,9 @@ public:
     bool deleteSelected();
 
     // ChordPro import (Settings > Import ChordPro..., or a file dragged onto the bar): the chords of the file become Quick-text
-    // in the text field, to look at and change. A file with parts asks which one. A key in the file is asked about, never used
-    // by itself. Nothing in the bar changes until Enter.
+    // in the text field, to look at and change. The whole song is read. A key in the file is asked about, and a file without one
+    // gets a guess; never used by itself. A file that cannot be read is refused and the bar stays as it is. Nothing in the bar
+    // changes until Enter.
     void chooseChordProFile();                              // the file chooser
     // Export: the progression as text. Copy as text (bar notation, which Quick-text reads) goes to the clipboard; Save ChordPro
     // writes a .cho file with a grid. Both keep the lengths.
@@ -279,9 +280,9 @@ public:
     void saveChordPro();                                    // the file chooser
     bool saveChordProTo (const juce::File&) const;
     bool importChordProFile (const juce::File&);            // false if it cannot be read
-    int readChordProText (const juce::String& text);        // reads the text and keeps it; gives how many parts it has
-    void importChordProText (const juce::String& text);     // what the file says (also for the tests)
-    void useChordProPart (int index);                       // the part picked from the list (-1: the whole file)
+    void importChordProData (const std::string& bytes);     // reads the bytes of a file and shows them
+    void showChordPro();                                    // what chordPro says: the chords, or the reason it is refused
+    void showKeyGuessCard (const juce::String& say);        // the question about the key, with Switch and Keep
     BarButton& getSwitchKeyButton() { return switchKeyButton; }
     bool isAskingKey() const { return askingKey; }
     engine::Key getGuessedKey() const { return guessedKey; }
@@ -391,10 +392,9 @@ private:
     bool noticeHasSwitchKey = false;
     engine::ChordProResult chordPro;       // what the imported file said
     juce::String importedText, importNote; // the text that was put in the field, and what to say about it while it stays
-    bool importTooMany = false;
+    bool importRefused = false;   // the file was refused: the field shows the bar as it is
     bool importAsksKey = false;
     std::unique_ptr<juce::FileChooser> fileChooser;
-    void showChordProText (const std::vector<std::string>& chords);
     BarButton settingsButton { "Settings", BarButton::Icon::Gear };
     ArpToggle arpButton;
     LearnToggle learnButton;

@@ -2323,7 +2323,9 @@ void ProgressionBar::leaveTextMode()
     problemRanges.clear();
     importedText = {};
     importNote = {};
+    importRefused = false;
     importAsksKey = false;
+    askingKey = false;
     guessSkip = false;
     noticeHasSwitchKey = false;
     updateNotice();
@@ -2394,10 +2396,17 @@ void ProgressionBar::acceptKeyGuess()
     askingKey = false;
 
     // The chords are stored as distances from the tonic, so they would move with the key. They stay the same chords instead.
-    auto progression = processor.getProgression();
-    for (auto& block : progression)
-        if (! block.rest)
-            block.chord.root = engine::wrap12 (block.chord.root + old.tonic - guessedKey.tonic);
+    const int shift = old.tonic - guessedKey.tonic;
+    const auto moved = [&] (engine::Progression bar)
+    {
+        for (auto& block : bar)
+            if (! block.rest)
+                block.chord.root = engine::wrap12 (block.chord.root + shift);
+        return bar;
+    };
+    auto progression = moved (processor.getProgression());
+    if (textMode)
+        progressionBeforeText = moved (progressionBeforeText); // Esc gives the bar back in the new key, with the same chords
 
     for (auto [parameter, index] : { std::pair<juce::RangedAudioParameter*, int> { processor.keyParam, guessedKey.tonic },
                                      std::pair<juce::RangedAudioParameter*, int> { processor.scaleParam, (int) guessedKey.scale } })
@@ -2407,14 +2416,20 @@ void ProgressionBar::acceptKeyGuess()
         parameter->endChangeGesture();
     }
     processor.editProgression (progression);
-    updateNotice();
+    if (textMode)
+        updateTextFeedback();
+    else
+        updateNotice();
     resized();
 }
 
 void ProgressionBar::declineKeyGuess()
 {
     askingKey = false;
-    updateNotice();
+    if (textMode)
+        updateTextFeedback();
+    else
+        updateNotice();
     resized();
     repaint();
 }
@@ -2451,7 +2466,9 @@ void ProgressionBar::updateTextFeedback()
         if (textEditor.getText() != importedText)
         {
             importNote = {};
+            importRefused = false;
             importAsksKey = false; // the text was changed: no more about the file
+            askingKey = false;     // and the question about its key
         }
         else if (read.problems.empty())
         {
@@ -2466,16 +2483,29 @@ void ProgressionBar::updateTextFeedback()
                        + ". Switch the key?";
                 noticeHasSwitchKey = true;
             }
+            // A successful import always ends with this, after anything said about the key
+            if (! importRefused && say.isNotEmpty())
+                say += " Check them before you press Enter.";
             if (say.isNotEmpty())
             {
                 noticeText = say;
-                noticeIsWarning = importNote.startsWith ("No chords");
+                noticeIsWarning = importRefused;
             }
         }
     }
     noticeHasAllow = false;
     allowButton.setVisible (false);
     switchKeyButton.setVisible (textMode && noticeHasSwitchKey);
+
+    // A file without a key: the guess is asked about at once, after what was said about the file
+    if (askingKey)
+        showKeyGuessCard (noticeText);
+    else if (guessSwitchButton.isVisible())
+    {
+        guessSwitchButton.setVisible (false);
+        guessKeepButton.setVisible (false);
+        askCard->setVisible (false);
+    }
     resized();
     repaint();
 }
@@ -2488,22 +2518,8 @@ void ProgressionBar::updateNotice()
 
     if (askingKey)
     {
-        const auto name = juce::String (engine::keyName (guessedKey)) + " " + juce::String (engine::scaleOf (guessedKey.scale).name);
-        const auto now = juce::String (engine::keyName (processor.getKey())) + " " + juce::String (engine::scaleOf (processor.getKey().scale).name);
         const auto asked = noticeText;
-        noticeText = "These chords fit " + name + ".";
-        noticeIsWarning = false;
-        noticeHasAllow = false;
-        allowButton.setVisible (false);
-        replaceButton.setVisible (false);
-        cancelReplaceButton.setVisible (false);
-        askCard->text = noticeText;
-        askCard->buttonsBelow = true;
-        askCard->setVisible (true);
-        guessSwitchButton.setButtonText ("Switch to " + name);
-        guessKeepButton.setButtonText ("Keep " + now);
-        guessSwitchButton.setVisible (true);
-        guessKeepButton.setVisible (true);
+        showKeyGuessCard ({});
         if (noticeText != asked || noticeBounds.isEmpty())
         {
             resized();
@@ -2803,82 +2819,80 @@ void ProgressionBar::saveChordPro()
 
 bool ProgressionBar::importChordProFile (const juce::File& file)
 {
-    if (! editing || ! file.existsAsFile() || file.getSize() > 2 * 1024 * 1024)
+    if (! editing || ! file.existsAsFile())
         return false;
-    importChordProText (file.loadFileAsString());
+    // A file over the limit is not read: the engine gives the reason for a text of that size
+    if (file.getSize() > (juce::int64) engine::kMaxChordProBytes)
+    {
+        importChordProData (std::string (engine::kMaxChordProBytes + 1, ' '));
+        return true;
+    }
+    juce::MemoryBlock data;
+    file.loadFileAsData (data);
+    importChordProData (std::string (static_cast<const char*> (data.getData()), data.getSize()));
     return true;
 }
 
-int ProgressionBar::readChordProText (const juce::String& text)
-{
-    chordPro = engine::readChordPro (text.toStdString());
-    return (int) chordPro.sections.size();
-}
-
-// The chords of the file, or the parts to pick from. Nothing in the bar changes yet.
-void ProgressionBar::importChordProText (const juce::String& text)
+// The bytes are read as they are, so that a file that is not UTF-8 can be refused
+void ProgressionBar::importChordProData (const std::string& bytes)
 {
     if (! editing)
         return;
-
-    if (readChordProText (text) == 0)
-    {
-        useChordProPart (-1);
-        return;
-    }
-
-    // A file with parts: a list to pick one from, each with its first chords
-    juce::PopupMenu menu;
-    menu.addSectionHeader ("Which part?");
-    for (int i = 0; i < (int) chordPro.sections.size(); ++i)
-    {
-        const auto& section = chordPro.sections[(size_t) i];
-        std::string first;
-        for (size_t c = 0; c < section.chords.size() && c < 5; ++c)
-            first += (first.empty() ? "" : " ") + section.chords[c];
-        menu.addItem (i + 1, juce::String (section.name) + "   " + juce::String (first) + (section.chords.size() > 5 ? " ..." : ""));
-    }
-
-    juce::Component::SafePointer<ProgressionBar> safe (this);
-    menu.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (this).withMinimumWidth (240),
-                        [safe] (int result)
-                        {
-                            if (safe != nullptr && result > 0)
-                                safe->useChordProPart (result - 1);
-                        });
+    chordPro = engine::readChordPro (bytes);
+    showChordPro();
 }
 
-void ProgressionBar::useChordProPart (int index)
+// The chords become Quick-text in the field (one bar each), with what was read in the notice. A refused file leaves the field
+// as the bar is, with the reason. The key is asked about at once, never changed by itself.
+void ProgressionBar::showChordPro()
 {
-    if (! editing)
-        return;
-    if (index >= 0 && index < (int) chordPro.sections.size())
-        showChordProText (chordPro.sections[(size_t) index].chords);
-    else
-        showChordProText (chordPro.chords);
-}
-
-// The chords become Quick-text in the field (one bar each), with a message about what was done
-void ProgressionBar::showChordProText (const std::vector<std::string>& chords)
-{
-    bool tooMany = false;
-    const juce::String text (engine::chordsAsQuickTextBars (chords, engine::kMaxBlocks, &tooMany));
-
     if (! textMode)
         startQuickText();
     if (! textMode)
         return;
 
+    importRefused = ! chordPro.refusal.empty();
+    const juce::String text = importRefused ? progressionAsText()
+                                            : juce::String (engine::chordsAsQuickTextBars (chordPro.chords, engine::kMaxBlocks));
     importedText = text;
-    importTooMany = tooMany;
-    importAsksKey = engine::chordProKeyDiffers (chordPro, processor.getKey());
-    guessSkip = chordPro.hasKey; // the file says its key (and has asked about it): nothing to guess
-    importNote = chords.empty() ? "No chords found in that file." : (tooMany ? "Only the first " + juce::String (engine::kMaxBlocks) + " chords fit." : juce::String());
-    if (chords.empty())
-        importAsksKey = false;
+    importNote = importRefused ? juce::String (chordPro.refusal) : juce::String (engine::chordProSummary (chordPro));
+    importAsksKey = ! importRefused && engine::chordProKeyDiffers (chordPro, processor.getKey());
+    guessSkip = true; // the key has been offered now: nothing is offered again after Enter
+    askingKey = false;
+    if (! importRefused && ! chordPro.hasKey)
+    {
+        const auto guess = engine::chordProKeyGuess (chordPro);
+        if (guess.found && ! engine::sameKeyKind (guess.key, processor.getKey()))
+        {
+            guessedKey = guess.key;
+            askingKey = true;
+            guessAskedAtVersion = processor.getProgressionVersion();
+        }
+    }
     textEditor.setText (text, false);
     updateTextFeedback();
     textEditor.moveCaretToEnd();
+}
+
+// The question about the key, low in the tray with the two buttons. `say` is what is said before it, if anything.
+void ProgressionBar::showKeyGuessCard (const juce::String& say)
+{
+    const auto name = juce::String (engine::keyName (guessedKey)) + " " + juce::String (engine::scaleOf (guessedKey.scale).name);
+    const auto now = juce::String (engine::keyName (processor.getKey())) + " " + juce::String (engine::scaleOf (processor.getKey().scale).name);
+    const auto question = "These chords fit " + name + ".";
+    noticeText = say.isNotEmpty() ? say : question; // in Quick-text the notice line keeps what was said about the file
+    noticeIsWarning = false;
+    noticeHasAllow = false;
+    allowButton.setVisible (false);
+    replaceButton.setVisible (false);
+    cancelReplaceButton.setVisible (false);
+    askCard->text = question;
+    askCard->buttonsBelow = true;
+    askCard->setVisible (true);
+    guessSwitchButton.setButtonText ("Switch to " + name);
+    guessKeepButton.setButtonText ("Keep " + now);
+    guessSwitchButton.setVisible (true);
+    guessKeepButton.setVisible (true);
 }
 
 bool ProgressionBar::isInterestedInFileDrag (const juce::StringArray& files)
@@ -2910,6 +2924,9 @@ void ProgressionBar::showSettingsMenu()
     menu.addSeparator();
     menu.addSectionHeader ("Import and export");
     menu.addItem (25, "Import ChordPro...", editing);
+    // Hint lines under the item, dimmed like the other explanations (a menu item cannot carry a tooltip)
+    menu.addItem (28, "Helper only. Reads the chords in [brackets].", false, false);
+    menu.addItem (29, "Check the result in Quick-text before you press Enter.", false, false);
     menu.addItem (26, "Copy as text", ! processor.getProgression().empty());
     menu.addItem (27, "Save ChordPro...", ! processor.getProgression().empty());
     menu.addSeparator();
@@ -3421,7 +3438,7 @@ void ProgressionBar::paint (juce::Graphics& g)
                     trayBounds, juce::Justification::centred);
     }
 
-    if (noticeText.isNotEmpty() && ! noticeBounds.isEmpty() && ! askingReplace && ! askingKey)
+    if (noticeText.isNotEmpty() && ! noticeBounds.isEmpty() && ! askingReplace && (! askingKey || textMode))
     {
         g.setColour (noticeIsWarning ? theme::warn : theme::dimText);
         if (auto* l = dynamic_cast<theme::LookAndFeel*> (&getLookAndFeel()))
@@ -3611,10 +3628,12 @@ void ProgressionBar::resized()
 
     // A short message under the blocks or the text, when there is one (with the Allow button at its end)
     noticeBounds = {};
+    const bool noticeBelow = noticeText.isNotEmpty() && ! askingReplace && (! askingKey || textMode); // in Quick-text the notice stays with the card
     if (askingKey)
     {
-        // The question sits low in the tray, with the text on top and the two buttons under it
-        const juce::Rectangle<int> card = juce::Rectangle<int> (0, 0, 520, 110).withCentre ({ trayBounds.getCentreX(), trayBounds.getBottom() - 65 }); // low in the tray, so the blocks stay in view
+        // The question sits low in the tray, with the text on top and the two buttons under it. In Quick-text it sits above the notice line.
+        const int centreY = textMode && noticeBelow ? trayBounds.getBottom() - 89 : trayBounds.getBottom() - 65;
+        const juce::Rectangle<int> card = juce::Rectangle<int> (0, 0, 520, 110).withCentre ({ trayBounds.getCentreX(), centreY }); // low in the tray, so the blocks stay in view
         askCard->setBounds (card);
         guessSwitchButton.setBounds (juce::Rectangle<int> (card.getRight() - 20 - 200, card.getBottom() - 18 - 38, 200, 38));
         guessKeepButton.setBounds (juce::Rectangle<int> (guessSwitchButton.getX() - 10 - 170, card.getBottom() - 18 - 38, 170, 38));
@@ -3633,7 +3652,7 @@ void ProgressionBar::resized()
         replaceButton.toFront (false);
         cancelReplaceButton.toFront (false);
     }
-    else if (noticeText.isNotEmpty())
+    if (noticeBelow)
     {
         auto row = area.removeFromBottom (22);
         area.removeFromBottom (2);

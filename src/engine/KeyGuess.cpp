@@ -3,6 +3,7 @@
 #include "KeyGuess.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace engine
 {
@@ -23,9 +24,9 @@ bool chordFitsKey(const GuessChord& chord, int tonic, bool minor)
     return minor && chord.type == ChordType::Major && relative.root == 7;
 }
 
-bool fits(const std::vector<GuessChord>& chords, int tonic, bool minor)
+int fitCount(const std::vector<GuessChord>& chords, int tonic, bool minor)
 {
-    return std::all_of(chords.begin(), chords.end(), [&] (const GuessChord& c) { return chordFitsKey(c, tonic, minor); });
+    return (int) std::count_if(chords.begin(), chords.end(), [&] (const GuessChord& c) { return chordFitsKey(c, tonic, minor); });
 }
 
 int timesRootUsed(const std::vector<GuessChord>& chords, int root)
@@ -40,7 +41,7 @@ bool isKeyChord(const GuessChord& chord, const Candidate& key)
 }
 }
 
-KeyGuess guessKey(const std::vector<GuessChord>& chords)
+KeyGuess guessKeyFromShare(const std::vector<GuessChord>& chords, double minShare)
 {
     KeyGuess none;
     if (chords.empty())
@@ -48,14 +49,28 @@ KeyGuess guessKey(const std::vector<GuessChord>& chords)
 
     const auto& first = chords.front();
     const auto& last = chords.back();
+    const int total = (int) chords.size();
+    const int need = (int) std::ceil(minShare * total - 1.0e-9);
 
-    // The keys that fit. A major key and its minor twin (3 semitones under) are settled between themselves first.
+    // The keys that fit best: the most chords fit them. A major key and its minor twin (3 semitones under) are settled between
+    // themselves first.
+    int best = 0;
     std::vector<Candidate> candidates;
     for (int major = 0; major < 12; ++major)
     {
         const int minorTonic = wrap12(major + 9);
-        const bool majorFits = fits(chords, major, false);
-        const bool minorFits = fits(chords, minorTonic, true);
+        const int majorFits = fitCount(chords, major, false);
+        const int minorFits = fitCount(chords, minorTonic, true);
+        best = std::max({ best, majorFits, minorFits });
+    }
+    if (best == 0 || best < need)
+        return none;
+
+    for (int major = 0; major < 12; ++major)
+    {
+        const int minorTonic = wrap12(major + 9);
+        const bool majorFits = fitCount(chords, major, false) == best;
+        const bool minorFits = fitCount(chords, minorTonic, true) == best;
         if (majorFits && minorFits)
         {
             const Candidate asMinor { minorTonic, true }, asMajor { major, false };
@@ -72,9 +87,6 @@ KeyGuess guessKey(const std::vector<GuessChord>& chords)
             candidates.push_back({ minorTonic, true });
     }
 
-    if (candidates.empty())
-        return none;
-
     Candidate chosen = candidates.front();
     if (candidates.size() > 1)
     {
@@ -90,14 +102,14 @@ KeyGuess guessKey(const std::vector<GuessChord>& chords)
         else
         {
             // Else the one whose key chord is used most; a tie gives no guess
-            int best = -1, bestCount = -1;
+            int bestIndex = -1, bestCount = -1;
             bool tie = false;
             for (int i = 0; i < (int) pool.size(); ++i)
             {
                 const int count = timesRootUsed(chords, pool[(size_t) i].tonic);
                 if (count > bestCount)
                 {
-                    best = i;
+                    bestIndex = i;
                     bestCount = count;
                     tie = false;
                 }
@@ -106,7 +118,7 @@ KeyGuess guessKey(const std::vector<GuessChord>& chords)
             }
             if (tie)
                 return none;
-            chosen = pool[(size_t) best];
+            chosen = pool[(size_t) bestIndex];
         }
     }
 
@@ -114,6 +126,11 @@ KeyGuess guessKey(const std::vector<GuessChord>& chords)
     guess.found = true;
     guess.key = { chosen.tonic, chosen.minor ? ScaleId::Minor : ScaleId::Major };
     return guess;
+}
+
+KeyGuess guessKey(const std::vector<GuessChord>& chords)
+{
+    return guessKeyFromShare(chords, 1.0);
 }
 
 bool sameKeyKind(const Key& a, const Key& b)

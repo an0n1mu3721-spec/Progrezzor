@@ -7,6 +7,9 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <iterator>
+
+#include "QuickText.h"
 
 namespace engine
 {
@@ -42,29 +45,163 @@ size_t findClose(const std::string& text, size_t open, char close)
     return std::string::npos;
 }
 
-enum class Kind { None, Verse, Chorus, Bridge };
-
-// start_of_verse, sov ... Gives the kind, and whether it starts (true) or ends (false) a section
-bool sectionDirective(const std::string& name, Kind& kind, bool& starts)
+// The chord words, the notes and the labels that are read from brackets
+bool isChordWord(const std::string& content)
 {
-    static const struct { const char* name; Kind kind; bool starts; } table[] = {
-        { "start_of_verse", Kind::Verse, true },   { "sov", Kind::Verse, true },   { "end_of_verse", Kind::Verse, false },   { "eov", Kind::Verse, false },
-        { "start_of_chorus", Kind::Chorus, true }, { "soc", Kind::Chorus, true }, { "end_of_chorus", Kind::Chorus, false }, { "eoc", Kind::Chorus, false },
-        { "start_of_bridge", Kind::Bridge, true }, { "sob", Kind::Bridge, true }, { "end_of_bridge", Kind::Bridge, false }, { "eob", Kind::Bridge, false },
-    };
-    for (const auto& entry : table)
-        if (name == entry.name)
-        {
-            kind = entry.kind;
-            starts = entry.starts;
+    if (content.empty() || content[0] < 'A' || content[0] > 'G')
+        return false;
+    int root = 0;
+    ChordType type = ChordType::Major;
+    return parseChordName(content, root, type);
+}
+
+// [f#] [e] [bb]: a single note in lowercase, which is skipped
+bool isNoteWord(const std::string& content)
+{
+    if (content.empty() || content[0] < 'a' || content[0] > 'g')
+        return false;
+    return content.size() == 1 || (content.size() == 2 && (content[1] == '#' || content[1] == 'b'));
+}
+
+// [VERSE], [Chorus 2], [PRE-CHORUS]: a label of a part of the song, which is skipped
+bool isSectionLabel(const std::string& content)
+{
+    auto word = lower(content);
+    while (! word.empty() && (std::isdigit((unsigned char) word.back()) || std::isspace((unsigned char) word.back())))
+        word.pop_back();
+    static const char* const labels[] = { "intro", "verse", "chorus", "bridge", "outro", "solo", "interlude", "coda", "pre-chorus" };
+    return std::any_of(std::begin(labels), std::end(labels), [&] (const char* label) { return word == label; });
+}
+
+// How many chords are in brackets in a piece of text (used for the comments and tabs that are skipped)
+int countChordBrackets(const std::string& text)
+{
+    int count = 0;
+    size_t i = 0;
+    while ((i = text.find('[', i)) != std::string::npos)
+    {
+        const size_t end = text.find(']', i + 1);
+        if (end == std::string::npos)
+            break;
+        if (isChordWord(trim(text.substr(i + 1, end - i - 1))))
+            ++count;
+        i = end + 1;
+    }
+    return count;
+}
+
+// Whether a word of the file is "capo", as a word of its own (not inside another word)
+bool mentionsCapo(const std::string& text)
+{
+    const auto low = lower(text);
+    for (size_t at = low.find("capo"); at != std::string::npos; at = low.find("capo", at + 1))
+    {
+        const bool before = at == 0 || ! std::isalpha((unsigned char) low[at - 1]);
+        const bool after = at + 4 >= low.size() || ! std::isalpha((unsigned char) low[at + 4]);
+        if (before && after)
             return true;
-        }
+    }
     return false;
 }
 
-const char* kindName(Kind kind)
+// Valid UTF-8, as a file of text must be
+bool isValidUtf8(const std::string& s)
 {
-    return kind == Kind::Verse ? "Verse" : kind == Kind::Chorus ? "Chorus" : "Bridge";
+    size_t i = 0;
+    while (i < s.size())
+    {
+        const unsigned char c = (unsigned char) s[i];
+        if (c < 0x80)
+        {
+            ++i;
+            continue;
+        }
+        size_t length = 0;
+        unsigned long code = 0;
+        unsigned long smallest = 0;
+        if ((c & 0xE0) == 0xC0)
+        {
+            length = 2;
+            code = c & 0x1F;
+            smallest = 0x80;
+        }
+        else if ((c & 0xF0) == 0xE0)
+        {
+            length = 3;
+            code = c & 0x0F;
+            smallest = 0x800;
+        }
+        else if ((c & 0xF8) == 0xF0)
+        {
+            length = 4;
+            code = c & 0x07;
+            smallest = 0x10000;
+        }
+        else
+            return false;
+        if (i + length > s.size())
+            return false;
+        for (size_t k = 1; k < length; ++k)
+        {
+            const unsigned char continuation = (unsigned char) s[i + k];
+            if ((continuation & 0xC0) != 0x80)
+                return false;
+            code = (code << 6) | (continuation & 0x3F);
+        }
+        if (code < smallest || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF))
+            return false;
+        i += length;
+    }
+    return true;
+}
+
+// Where the directive with one of two names is, from `from` on: the { and the position after its }. npos if there is none.
+struct DirectiveSpan
+{
+    size_t begin = std::string::npos;
+    size_t after = std::string::npos;
+};
+
+DirectiveSpan findDirective(const std::string& text, size_t from, const char* first, const char* second)
+{
+    for (size_t search = from; search < text.size();)
+    {
+        const size_t brace = text.find('{', search);
+        if (brace == std::string::npos)
+            break;
+        const size_t close = text.find('}', brace);
+        if (close == std::string::npos)
+            break;
+        const auto inner = trim(text.substr(brace + 1, close - brace - 1));
+        const auto name = lower(trim(inner.substr(0, inner.find_first_of(": \t"))));
+        if (name == first || name == second)
+            return { brace, close + 1 };
+        search = close + 1;
+    }
+    return {};
+}
+
+// The directives whose text is a comment: the chords in them are not read
+bool isCommentDirective(const std::string& name)
+{
+    return name == "comment" || name == "c" || name == "ci" || name == "comment_italic" || name == "cb" || name == "comment_box";
+}
+
+// One bracket of the text, classified: a chord is read, the rest is counted or skipped
+void readBracket(const std::string& content, ChordProResult& result)
+{
+    if (content.empty() || content.find_first_not_of("-|,;:.") == std::string::npos) // notation: removed silently
+        return;
+    if (isSectionLabel(content))
+        return;
+    if (isChordWord(content))
+    {
+        result.chords.push_back(content);
+        return;
+    }
+    if (isNoteWord(content))
+        ++result.skippedNotes;
+    // any other bracket ([guitar], [N.C.], [*Coda]) is text and is skipped without a count
 }
 
 // G, F#m, Bb, Am, Dminor ... Gives false if it is not a key we can read
@@ -314,25 +451,20 @@ void readGrid(const std::string& body, int shapeCells, std::vector<std::string>&
 ChordProResult readChordPro(const std::string& text)
 {
     ChordProResult result;
-
-    struct Open { Kind kind = Kind::None; std::string label; std::vector<std::string> chords; };
-    Open open;
-    std::vector<ChordProSection> sections;
-
-    const auto close = [&]
+    if (text.size() > kMaxChordProBytes)
     {
-        if (open.kind != Kind::None && ! open.chords.empty())
-        {
-            ChordProSection section;
-            section.name = open.label.empty() ? kindName(open.kind) : open.label;
-            section.chords = open.chords;
-            sections.push_back(section);
-        }
-        open = {};
-    };
+        result.refusal = "This file is over 256 KB, so it is not imported.";
+        return result;
+    }
+    if (! isValidUtf8(text))
+    {
+        result.refusal = "This file is not text (UTF-8), so it is not imported.";
+        return result;
+    }
+    result.hasCapo = mentionsCapo(text);
 
-    size_t i = 0;
     const size_t length = text.size();
+    size_t i = 0;
     bool lineStart = true;
     while (i < length)
     {
@@ -350,10 +482,13 @@ ChordProResult readChordPro(const std::string& text)
             size_t first = i;
             while (first < length && (text[first] == ' ' || text[first] == '\t'))
                 ++first;
-            if (first < length && text[first] == '#') // a comment: the rest of the line is not read
+            if (first < length && text[first] == '#') // a comment line: not read, but its chords are counted
             {
-                while (i < length && text[i] != '\n' && text[i] != '\r')
-                    ++i;
+                size_t end = i;
+                while (end < length && text[end] != '\n' && text[end] != '\r')
+                    ++end;
+                result.skippedInComments += countChordBrackets(text.substr(i, end - i));
+                i = end;
                 continue;
             }
         }
@@ -374,53 +509,41 @@ ChordProResult readChordPro(const std::string& text)
             const auto name = lower(trim(body.substr(0, nameEnd == std::string::npos ? body.size() : nameEnd)));
             const auto arg = nameEnd == std::string::npos ? std::string() : trim(body.substr(nameEnd + 1));
 
-            Kind kind;
-            bool starts;
-            if (name == "start_of_grid" || name == "sog")
-            {
-                // Everything up to {end_of_grid} is the grid
-                size_t gridEnd = length;
-                size_t after = length;
-                for (size_t search = end + 1; search < length;)
-                {
-                    const size_t brace = text.find('{', search);
-                    if (brace == std::string::npos)
-                        break;
-                    const size_t close = text.find('}', brace);
-                    if (close == std::string::npos)
-                        break;
-                    const auto inner = trim(text.substr(brace + 1, close - brace - 1));
-                    const auto innerName = lower(trim(inner.substr(0, inner.find_first_of(": \t"))));
-                    if (innerName == "end_of_grid" || innerName == "eog")
-                    {
-                        gridEnd = brace;
-                        after = close + 1;
-                        break;
-                    }
-                    search = close + 1;
-                }
-                std::vector<std::string> words;
-                readGrid(text.substr(end + 1, gridEnd - (end + 1)), cellsFromShape(arg), words);
-                for (const auto& word : words)
-                {
-                    result.chords.push_back(word);
-                    if (open.kind != Kind::None)
-                        open.chords.push_back(word);
-                }
-                i = after;
-                continue;
-            }
+            if (name == "title" || name == "t")
+                result.title = arg;
             else if (name == "key")
                 readKey(arg, result);
-            else if (sectionDirective(name, kind, starts))
+            else if (name == "start_of_grid" || name == "sog")
             {
-                close();
-                if (starts)
-                {
-                    open.kind = kind;
-                    open.label = arg;
-                }
+                // Everything up to the end of the grid is the grid
+                const auto close = findDirective(text, end + 1, "end_of_grid", "eog");
+                const size_t gridEnd = close.begin == std::string::npos ? length : close.begin;
+                std::vector<std::string> words;
+                readGrid(text.substr(end + 1, gridEnd - (end + 1)), cellsFromShape(arg), words);
+                result.chords.insert(result.chords.end(), words.begin(), words.end());
+                i = close.begin == std::string::npos ? length : close.after;
+                continue;
             }
+            else if (isCommentDirective(name))
+            {
+                ++result.skippedDirectives;
+                result.skippedInComments += countChordBrackets(body);
+            }
+            else if (name == "start_of_comment" || name == "soc" || name == "start_of_tab" || name == "sot")
+            {
+                // Everything up to the end directive is skipped
+                ++result.skippedDirectives;
+                const bool tab = name == "start_of_tab" || name == "sot";
+                const auto close = tab ? findDirective(text, end + 1, "end_of_tab", "eot") : findDirective(text, end + 1, "end_of_comment", "eoc");
+                const size_t blockEnd = close.begin == std::string::npos ? length : close.begin;
+                result.skippedInComments += countChordBrackets(text.substr(end + 1, blockEnd - (end + 1)));
+                if (close.begin != std::string::npos)
+                    ++result.skippedDirectives;
+                i = close.begin == std::string::npos ? length : close.after;
+                continue;
+            }
+            else
+                ++result.skippedDirectives;
             i = end + 1;
             continue;
         }
@@ -428,42 +551,50 @@ ChordProResult readChordPro(const std::string& text)
         if (c == '[')
         {
             const size_t end = findClose(text, i, ']');
-            if (end == std::string::npos)
+            if (end == std::string::npos) // not closed on its line: just a character
             {
                 ++i;
                 continue;
             }
-            const auto chord = trim(text.substr(i + 1, end - i - 1));
-            // [*Coda] is a note in the song, not a chord
-            if (! chord.empty() && chord[0] != '*')
-            {
-                result.chords.push_back(chord);
-                if (open.kind != Kind::None)
-                    open.chords.push_back(chord);
-            }
+            readBracket(trim(text.substr(i + 1, end - i - 1)), result);
             i = end + 1;
             continue;
         }
 
         ++i;
     }
-    close();
 
-    // The sections that came twice get a number: Chorus, Chorus 2
-    std::vector<std::string> seen;
-    for (auto& section : sections)
-    {
-        const int total = (int) std::count_if(sections.begin(), sections.end(), [&] (const ChordProSection& s) { return s.name == section.name; });
-        if (total > 1)
-        {
-            const int before = (int) std::count(seen.begin(), seen.end(), section.name);
-            seen.push_back(section.name);
-            if (before > 0)
-                section.name += " " + std::to_string(before + 1);
-        }
-    }
-    result.sections = sections;
+    if (result.chords.empty())
+        result.refusal = "No chords found in that file.";
+    else if (result.chords.size() > (size_t) kMaxBlocks)
+        result.refusal = "This file has " + std::to_string(result.chords.size()) + " chords. The bar holds " + std::to_string(kMaxBlocks)
+                         + ", so the file is not imported.";
     return result;
+}
+
+std::string chordProSummary(const ChordProResult& result)
+{
+    std::string text = "Read " + std::to_string(result.chords.size()) + " chords. Skipped: " + std::to_string(result.skippedDirectives)
+                       + " directives, " + std::to_string(result.skippedNotes) + " notes, " + std::to_string(result.skippedInComments)
+                       + " chords in comments or tabs, and some text.";
+    if (result.hasCapo)
+        text += " The file mentions a capo, so the chords are as written.";
+    return text;
+}
+
+KeyGuess chordProKeyGuess(const ChordProResult& result)
+{
+    if (result.hasKey || ! result.refusal.empty())
+        return {};
+    std::vector<GuessChord> chords;
+    for (const auto& word : result.chords)
+    {
+        int root = 0;
+        ChordType type = ChordType::Major;
+        if (parseChordName(word.substr(0, word.find(':')), root, type)) // a grid word may have its length after a colon
+            chords.push_back({ root, type });
+    }
+    return guessKeyFromShare(chords, 0.75);
 }
 
 bool isChordProFileName(const std::string& fileName)

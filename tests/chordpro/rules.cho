@@ -1,0 +1,21 @@
+{title: Rules test}
+{ns}
+{define: Am 0 0 2 2 1 0}
+{artist: Nobody}
+{composer: Nobody}
+[e] [f#] [d] [-] [|] [,] [;] [:] [.]
+[INTRO] [C] [G]
+[Verse 2]
+[Am] [F]
+[PRE-CHORUS] [G]
+{comment: [D] a comment}
+{start_of_comment}
+[Bm] a comment block
+{end_of_comment}
+{start_of_tab}
+[E]|-0-2-3-|
+[A]|-----|
+{end_of_tab}
+Lyrics [guitar] and [fade] [or] [<] [>] [N.C.] [*Coda]
+Some words [Dm] [Em]
+Capo 4 says the sheet

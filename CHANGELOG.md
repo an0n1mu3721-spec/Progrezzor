@@ -26,6 +26,10 @@ tag the commit (`vX.Y.Z`).
 - **Clearer tooltips** for Quick-text (no stray % sign) and for Settings, which now says what it holds.
 
 ### Changed
+- **ChordPro import reads the whole song.** There is no question about parts any more: the chords come in the order they are written, and section labels such as [VERSE] or [CHORUS] are skipped. Chords in comments and tabs are left out. The notice says how many chords were read and what was skipped, and a capo is noted as "the chords are as written". A file that is not UTF-8, is over 256 KB, has no chords or has more than 256 is refused, and the bar stays as it is.
+- **A progression holds up to 256 blocks** (it was 32). Saved projects open as before.
+- **ChordPro import has a helper note.** Settings shows that the import reads the chords in brackets, and every successful import ends its notice with "Check them before you press Enter."
+- **A ChordPro file without a key gets a key guess when it is read.** If three in four of its chords fit another key, the question "These chords fit X." comes at once, with Switch and Keep. The key never changes by itself.
 - **Half-bar blocks are 10 px wider,** and while the mouse is over one, its name and length fade so that the lock, gear and arrows are easy to see and hit.
 - **Blocks never shrink to fit.** A bar is always the same width, whatever else is in the progression. When the blocks do not fit in a row they go on to a new row, and when the rows do not fit, the progression scrolls up and down.
 - **The window opens a little wider (1100 px),** so that more blocks fit in a row.

@@ -31,6 +31,10 @@ struct KeyGuess
 
 KeyGuess guessKey(const std::vector<GuessChord>& chords);
 
+// The same guess, but a key may fit only some of the chords: the key that the most chords fit, if at least `minShare` of the
+// chords (0.75 = three in four) fit it. Ties are settled as in guessKey. guessKey is this with minShare 1.
+KeyGuess guessKeyFromShare(const std::vector<GuessChord>& chords, double minShare);
+
 // True if two keys are the same for this purpose: the same tonic, and both major or both minor (Minor, Dorian and Phrygian count
 // as minor)
 bool sameKeyKind(const Key& a, const Key& b);

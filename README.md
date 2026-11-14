@@ -71,6 +71,16 @@ row), or you will hear both.
 **After you drag the MIDI into your DAW,** bypass Progrezzor on that track. Otherwise the clip's notes play Progrezzor's pads,
 and the progression plays twice.
 
+## Limits
+
+- A progression holds up to 256 blocks.
+- Scales: Minor, Major, Dorian and Phrygian.
+- Block lengths go in steps of 2 beats, so a half bar in 3/4 cannot be set exactly.
+- ChordPro import is a helper, not a guarantee. It reads the chords in square brackets, the title and the key, and skips lyrics, notes and most other markup. Always check the chords in Quick-text before you press Enter.
+- A capo is not read by the import, so the chords are taken as written.
+- Chords outside the key are shown in the progression. With Lock to scale on, they are marked and do not play until you allow them.
+- Tested on Linux with Bitwig and REAPER. Windows and Ableton Live are not tested yet.
+
 ## Install
 
 Download the archive for your system from the

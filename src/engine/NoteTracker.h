@@ -5,6 +5,7 @@
 #include <array>
 
 #include "ChordEngine.h"
+#include "Progression.h"
 
 // Keeps track of which notes are sounding, so that no note ever hangs. Pure C++, no allocation, no locks: it can run on
 // the audio thread.
@@ -26,7 +27,7 @@ class NoteTracker
 {
 public:
     static constexpr int kNumPadSources = 7;      // a pad held by the mouse
-    static constexpr int kNumBlockSources = 32;   // a block of the progression held by the mouse
+    static constexpr int kNumBlockSources = kMaxBlocks; // a block of the progression held by the mouse (one source per block)
     static constexpr int kNumSources = kNumPadSources + kNumBlockSources + 1 + 128; // the loop, and a source for each MIDI key
 
     static constexpr int padSource (int pad) { return pad; }

@@ -18,7 +18,7 @@ constexpr double kBeatsPerBar = 4.0;     // until the host's time signature is u
 constexpr double kMinBlockBeats = 2.0;   // half a bar
 constexpr double kMaxBlockBeats = 32.0;  // eight bars
 constexpr double kDefaultBlockBeats = 4.0;
-constexpr int kMaxBlocks = 32;
+constexpr int kMaxBlocks = 256;
 
 struct Block
 {

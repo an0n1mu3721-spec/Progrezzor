@@ -532,4 +532,24 @@ Progression keepingBlockState (const Progression& old, Progression read)
     }
     return read;
 }
+
+bool parseChordName (const std::string& name, int& root, ChordType& type)
+{
+    size_t pos = 0;
+    const int pitch = readNote (name, pos);
+    if (pitch < 0)
+        return false;
+
+    const size_t slash = name.find ('/', pos);
+    if (! readType (name.substr (pos, slash == std::string::npos ? std::string::npos : slash - pos), type))
+        return false;
+    if (slash != std::string::npos)
+    {
+        size_t bass = slash + 1;
+        if (readNote (name, bass) < 0 || bass != name.size())
+            return false;
+    }
+    root = pitch;
+    return true;
+}
 }
