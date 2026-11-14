@@ -1051,7 +1051,7 @@ void BlockButton::mouseDrag (const juce::MouseEvent& e)
     {
         setTopLeftPosition (moveStartX + e.getDistanceFromDragStartX(), moveStartY + e.getDistanceFromDragStartY());
         if (onMoveDrag)
-            onMoveDrag (getBounds().getCentre());
+            onMoveDrag (centreInBar());
     }
 }
 
@@ -1073,7 +1073,7 @@ void BlockButton::mouseUp (const juce::MouseEvent& e)
         const bool copy = e.mods.isCtrlDown();
 #endif
         if (onMoveEnd)
-            onMoveEnd (getBounds().getCentre(), copy);
+            onMoveEnd (centreInBar(), copy);
     }
     else if (was == Mode::Press)
     {
@@ -2047,6 +2047,10 @@ std::unique_ptr<juce::Component> ProgressionBar::makeArpPanel()
 
 ProgressionBar::ProgressionBar (ProgrezzorProcessor& p) : processor (p)
 {
+    addAndMakeVisible (blockHolder);
+    blockHolder.setInterceptsMouseClicks (false, true);
+    scrollBar.addListener (this);
+    addChildComponent (scrollBar);
     learnKeys = std::make_unique<LearnKeys>();
     addChildComponent (*learnKeys);
     learnButton.setTooltip ("Learn: hold the keys of each chord of the progression on your MIDI keyboard, one chord after the other");
@@ -3129,6 +3133,7 @@ void ProgressionBar::refresh()
             if (blocks[i]->isHeldByMouse())
                 processor.releaseBlock (i);
 
+        scrollToEnd = (int) progression.size() > blocks.size();
         clearSelection();
         blocks.clear();
         for (int i = 0; i < (int) progression.size(); ++i)
@@ -3203,7 +3208,7 @@ void ProgressionBar::refresh()
                 resized(); // back to its place if nothing changed
             };
             block->setEditable (editing);
-            addChildComponent (block);
+            blockHolder.addChildComponent (block);
             block->setVisible (! textMode);
         }
     }
@@ -3429,6 +3434,8 @@ void ProgressionBar::paint (juce::Graphics& g)
 
         if (! textMode && slots.size() == (size_t) processor.getProgression().size())
         {
+            juce::Graphics::ScopedSaveState clipToTray (g); // the rows can scroll, so the rulers are cut off at the tray
+            g.reduceClipRegion (trayBounds);
             g.setFont (l->labelFont (13.0f));
             const double barBeats = std::max (1.0, processor.getHostBarBeats());
             double start = 0.0;
@@ -3488,20 +3495,19 @@ void ProgressionBar::paint (juce::Graphics& g)
                 }
             }
         }
+        juce::Graphics::ScopedSaveState clipToTray (g);
+        g.reduceClipRegion (trayBounds);
         g.setColour (theme::accent);
         g.fillRoundedRectangle ((float) x - 1.5f, (float) row.getY(), 3.0f, (float) row.getHeight(), 1.5f);
     }
 }
 
-double ProgressionBar::scaleFor (const engine::Progression& p) const
+// The width of a block depends on its length only, never on the other blocks, and nothing is scaled to fit: a bar is 124 px, and
+// half a bar gets 72 (room for the icons). When the blocks do not fit in a row they wrap to a new row, and when the rows do not
+// fit they scroll.
+double ProgressionBar::scaleFor (const engine::Progression&) const
 {
-    const double barBeats = std::max (1.0, processor.getHostBarBeats());
-    const double most = kPixelsPerBar / barBeats, least = kLeastPixelsPerBar / barBeats;
-    if (blockAreaWidth <= 0.0 || p.empty())
-        return most;
-    const double total = std::max (1.0, engine::totalBeats (p));
-    const double fit = (blockAreaWidth - 6.0 * (double) p.size()) / total;
-    return std::max (least, std::min (most, fit));
+    return kPixelsPerBar / std::max (1.0, processor.getHostBarBeats()); // pixels per beat
 }
 
 void ProgressionBar::resized()
@@ -3612,6 +3618,7 @@ void ProgressionBar::resized()
 
     if (textMode)
     {
+        scrollBar.setVisible (false);
         textEditor.setBounds (area);
         textMarks->setBounds (area);
         textEditor.setIndents (10, (area.getHeight() - (int) textEditor.getFont().getHeight()) / 3);
@@ -3629,44 +3636,89 @@ void ProgressionBar::resized()
     // Blocks (and then + and the text button) flow left to right and wrap to a new row when the line is full
     // A bar is normally the same width however few blocks there are (so a single block does not fill the bar and its edge can
     // be pulled out). When one block is pulled long, all of them shrink to make room, down to a smallest width; after that
-    // the rows wrap.
-    blockAreaWidth = area.getWidth();
-    const double scale = scaleFor (progression);
-
-    struct Item { int width; int row = 0; int x = 0; };
-    std::vector<Item> items;
-    if (haveBlocks)
-        for (const auto& block : progression)
-            items.push_back ({ std::min (area.getWidth(), std::max (minBlock, juce::roundToInt (scale * block.beats))) });
-
-    int rows = 1, x = 0;
-    for (auto& item : items)
-    {
-        if (x > 0 && x + item.width > area.getWidth())
-        {
-            ++rows;
-            x = 0;
-        }
-        item.row = rows - 1;
-        item.x = x;
-        x += item.width + gap;
-    }
-
+    // the rows wrap, and when they do not fit, they scroll.
     // Each row has a thin ruler above it with the bar number where each block starts
     const int rulerHeight = 14;
     const int rowGap = 3;
-    const int blockRowHeight = juce::jlimit (28, maxRowHeight, (area.getHeight() - (rowGap + rulerHeight) * rows + rowGap) / rows);
-    const auto place = [&] (const Item& item)
+    const int leastRowHeight = 46;
+
+    struct Item { int width; int row = 0; int x = 0; };
+    std::vector<Item> items;
+    int rows = 1;
+    const auto flow = [&] (int width)
     {
-        return juce::Rectangle<int> (area.getX() + item.x, area.getY() + rulerHeight + item.row * (blockRowHeight + rulerHeight + rowGap), item.width, blockRowHeight);
+        blockAreaWidth = (double) width;
+        const double scale = scaleFor (progression);
+        items.clear();
+        if (haveBlocks)
+            for (const auto& block : progression)
+                items.push_back ({ std::min (width, std::max (minBlock, juce::roundToInt (scale * block.beats))) });
+        rows = 1;
+        int x = 0;
+        for (auto& item : items)
+        {
+            if (x > 0 && x + item.width > width)
+            {
+                ++rows;
+                x = 0;
+            }
+            item.row = rows - 1;
+            item.x = x;
+            x += item.width + gap;
+        }
     };
 
+    // The rows get the height there is, down to a least. When even that is too much, the rows scroll up and down.
+    flow (area.getWidth());
+    const auto neededHeight = [&] { return (leastRowHeight + rulerHeight) * rows + rowGap * (rows - 1); };
+    const bool scrolls = neededHeight() > area.getHeight();
+    auto visibleArea = area;
+    if (scrolls)
+    {
+        const int barWidth = 12;
+        scrollBar.setBounds (trayBounds.reduced (3).removeFromRight (barWidth));
+        visibleArea.removeFromRight (barWidth + 2);
+        flow (visibleArea.getWidth());
+    }
+    const int blockRowHeight = scrolls ? leastRowHeight
+                                       : juce::jlimit (leastRowHeight, maxRowHeight, (area.getHeight() - (rowGap + rulerHeight) * rows + rowGap) / rows);
+    contentHeight = (blockRowHeight + rulerHeight) * rows + rowGap * (rows - 1);
+    const int maxScroll = std::max (0, contentHeight - area.getHeight());
+    if (scrollToEnd && scrolls)
+        scrollY = maxScroll;
+    scrollToEnd = false;
+    scrollY = juce::jlimit (0, maxScroll, scrollY);
+    scrollBar.setVisible (scrolls);
+    if (scrolls)
+    {
+        scrollBar.setRangeLimits (0.0, (double) contentHeight);
+        scrollBar.setCurrentRange ((double) scrollY, (double) area.getHeight(), juce::dontSendNotification);
+    }
+
+    blockHolder.setBounds (trayBounds.reduced (3));
     for (int i = 0; i < (int) items.size(); ++i)
     {
-        const auto slot = place (items[(size_t) i]);
+        const auto& item = items[(size_t) i];
+        const juce::Rectangle<int> slot (area.getX() + item.x, area.getY() + rulerHeight + item.row * (blockRowHeight + rulerHeight + rowGap) - scrollY,
+                                         item.width, blockRowHeight);
         slots.push_back (slot);
-        blocks[i]->setBounds (slot);
+        blocks[i]->setBounds (slot.translated (-blockHolder.getX(), -blockHolder.getY()));
     }
+}
+
+void ProgressionBar::scrollBarMoved (juce::ScrollBar*, double newRangeStart)
+{
+    scrollY = (int) newRangeStart;
+    resized();
+    repaint (trayBounds);
+}
+
+void ProgressionBar::mouseWheelMove (const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel)
+{
+    if (scrollBar.isVisible() && trayBounds.contains (e.getEventRelativeTo (this).getPosition()))
+        scrollBar.mouseWheelMove (e.getEventRelativeTo (&scrollBar), wheel);
+    else
+        juce::Component::mouseWheelMove (e, wheel);
 }
 
 // ---- Editor ------------------------------------------------------------------------------------------------------

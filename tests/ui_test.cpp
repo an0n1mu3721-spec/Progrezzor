@@ -59,6 +59,12 @@ void runBlock (ProgrezzorProcessor& processor, juce::MidiBuffer midi = {})
     processor.processBlock (audio, midi);
 }
 
+// A block's place in the coordinates of the bar (the blocks sit in a holder inside it)
+juce::Rectangle<int> blockRect (ProgressionBar& bar, int i)
+{
+    return bar.getLocalArea (bar.getBlock (i), bar.getBlock (i)->getLocalBounds());
+}
+
 void settle (int milliseconds = 120)
 {
     juce::MessageManager::getInstance()->runDispatchLoopUntil (milliseconds);
@@ -1060,7 +1066,7 @@ int main (int argc, char** argv)
         snapshot ("resize_long");
         bool allInside = true;
         for (int b = 0; b < bar.numBlocks(); ++b)
-            allInside &= bar.getBlock (b)->getBounds().getRight() <= bar.getTrayBounds().getRight();
+            allInside &= blockRect (bar, b).getRight() <= bar.getTrayBounds().getRight();
         check (allInside, "a block pulled long makes the others smaller, so that nothing runs out of the bar");
         bar.getBlock (0)->onResizeEnd();
         check (during > 4.0 && near (processor.getProgression()[0].beats, during), "dragging the edge makes the block longer");
@@ -1071,17 +1077,17 @@ int main (int argc, char** argv)
         settle();
 
         // Move and copy
-        bar.getBlock (0)->onMoveEnd ({ bar.getBlock (3)->getBounds().getRight() + 5, bar.getBlock (3)->getBounds().getCentreY() }, false);
+        bar.getBlock (0)->onMoveEnd ({ blockRect (bar, 3).getRight() + 5, blockRect (bar, 3).getCentreY() }, false);
         check (roots() == "2 4 7 0 ", "a block is dragged to the end");
         processor.undo();
-        bar.getBlock (3)->onMoveEnd ({ bar.getBlock (0)->getBounds().getX() - 5, bar.getBlock (0)->getBounds().getCentreY() }, true);
+        bar.getBlock (3)->onMoveEnd ({ blockRect (bar, 0).getX() - 5, blockRect (bar, 0).getCentreY() }, true);
         check (roots() == "7 0 2 4 7 ", "Ctrl-drag puts a copy in front");
         processor.undo();
         settle();
 
         // A pad pulled into the bar is inserted where it is let go
-        const auto screenOf = [&] (int x) { return bar.localPointToGlobal (juce::Point<int> (x, bar.getBlock (0)->getBounds().getCentreY())); };
-        ui.getPad (4).onDragEnd (screenOf (bar.getBlock (1)->getBounds().getRight() + 2)); // pad 5 in A minor is Em: root 7
+        const auto screenOf = [&] (int x) { return bar.localPointToGlobal (juce::Point<int> (x, blockRect (bar, 0).getCentreY())); };
+        ui.getPad (4).onDragEnd (screenOf (blockRect (bar, 1).getRight() + 2)); // pad 5 in A minor is Em: root 7
         check (processor.getProgression().size() == 5 && processor.getProgression()[2].chord.root == 7, "a pad dropped in the bar is inserted");
         processor.undo();
 
@@ -1098,7 +1104,7 @@ int main (int argc, char** argv)
 
         // A pad dragged onto the middle of a block replaces it, and the block lights up on the way
         {
-            const auto middle = [&] (int i) { return bar.localPointToGlobal (bar.getBlock (i)->getBounds().getCentre()); };
+            const auto middle = [&] (int i) { return bar.localPointToGlobal (blockRect (bar, i).getCentre()); };
             check (bar.blockAtScreenPoint (middle (2)) == 2, "the middle of a block is a place to replace");
             ui.getPad (3).onDragStart();
             ui.getPad (3).onDragMove (middle (2));
@@ -1200,7 +1206,7 @@ int main (int argc, char** argv)
                 ui.getPad (2).onDragStart();
                 processor.releasePad (2);
                 runBlock (processor);
-                ui.getPad (2).onDragEnd (bar.localPointToGlobal (juce::Point<int> (bar.getBlock (0)->getBounds().getRight() + 2, bar.getBlock (0)->getBounds().getCentreY())));
+                ui.getPad (2).onDragEnd (bar.localPointToGlobal (juce::Point<int> (blockRect (bar, 0).getRight() + 2, blockRect (bar, 0).getCentreY())));
                 settle (50);
                 bar.updateButtons();
                 check (processor.getProgression().size() == sizeBefore + 1, "a pad dragged in while Add is on is added once");
@@ -1248,7 +1254,7 @@ int main (int argc, char** argv)
             const auto barBefore = processor.getProgression();
             const auto screenAt = [&] (int block, bool rightEdge)
             {
-                const auto b = bar.getBlock (block)->getBounds();
+                const auto b = blockRect (bar, block);
                 return bar.localPointToGlobal (juce::Point<int> (rightEdge ? b.getRight() + 2 : b.getCentreX(), b.getCentreY()));
             };
             auto& restPad = ui.getRestPad();
@@ -1377,6 +1383,13 @@ int main (int argc, char** argv)
             check (bar.getBlock (0)->getWidth() == 72 && bar.getBlock (2)->getWidth() > bar.getBlock (0)->getWidth(), "a half bar is 72 px wide, a bar more");
             snapshot ("half_bars_hover");
             bar.getBlock (1)->setForceHover (false);
+            // Lots of half bars: they stay readable, wrap, and the rows scroll
+            engine::Progression halves;
+            for (int n = 0; n < 16; ++n)
+                halves = engine::withInserted (halves, n, processor.getPadChord (n % 7), n % 4 == 1 ? 4.0 : (n % 4 == 3 ? 8.0 : 2.0)); // half bars, bars and two bars
+            processor.setProgression (halves);
+            settle();
+            snapshot ("many_halves");
             processor.setProgression (beforeMany);
             settle();
         }
