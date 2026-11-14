@@ -157,6 +157,7 @@ Kræver et MIDI-tastatur.
 - [ ] Tænd Add og klik på en blok: den markeres (pulserende kant), og Delete sletter den. Tryk så en pad: akkorden lægges stadig bagerst, og blokken prøver ikke akkorden.
 - [x] Quick-text med oktaver: `Am+1 F-1 C G+2:2`, derefter Enter.
 - [x] Quick-text: skriv `Gadd Gsus` og tryk Enter. Blokkene skal læses som Gadd9 og Gsus4 (Gadd9 og Gsus4 skrevet fuldt virker som før).
+- [ ] Pauser i rundgangen (træk den blanke pad ned): blokken er svag/ghosted. Den bliver tydelig ved mouseover og når den markeres eller spiller.
 - [ ] Quick-text: skriv `Am*2 F:0.5*2 C:2` og tryk Enter. Åbn Quick-text igen: teksten står som `| Am | Am | F F | C:2 |`, og rundgangen er den samme.
 - [x] Det nye udseende: er farverne, knapperne og logoet i mål?
 

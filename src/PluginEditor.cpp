@@ -764,7 +764,19 @@ void BlockButton::setRoot (int pitchClass)
     }
 }
 
+// A rest is ghosted: faint, so that the chords stand out and the silence does not shout. It comes back to full strength when the
+// mouse is over it, when it is marked, when it plays and while it is held.
 void BlockButton::paint (juce::Graphics& g)
+{
+    const bool ghost = rest && ! heldByMouse && ! dropTarget && ! playing && ! selected && ! trial && ! hovered();
+    if (ghost)
+        g.beginTransparencyLayer (0.38f);
+    paintBlock (g);
+    if (ghost)
+        g.endTransparencyLayer();
+}
+
+void BlockButton::paintBlock (juce::Graphics& g)
 {
     // A key in the colour of its chord (darker than the pads, so the pads stay the loud ones)
     const auto colour = theme::chordColour (rootPitchClass);

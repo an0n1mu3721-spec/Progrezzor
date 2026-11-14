@@ -188,6 +188,7 @@ public:
     void setForceHover (bool nowForced) { forceHover = nowForced; repaint(); } // for the tests: draw as if the mouse is over it
 
     void paint (juce::Graphics&) override;
+    void paintBlock (juce::Graphics&);
     void mouseDown (const juce::MouseEvent&) override;
     void mouseDrag (const juce::MouseEvent&) override;
     void mouseUp (const juce::MouseEvent&) override;
