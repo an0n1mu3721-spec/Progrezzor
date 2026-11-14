@@ -2420,7 +2420,12 @@ engine::Key ProgressionBar::fileKeyTarget() const
     const auto current = processor.getKey();
     engine::Key target { chordPro.keyTonic, engine::ScaleId::Major };
     if (chordPro.keyMinor)
-        target.scale = current.scale == engine::ScaleId::Major ? engine::ScaleId::Minor : current.scale;
+    {
+        // a minor song keeps the minor scale that is set (Minor, Dorian, Phrygian), otherwise it is Minor
+        const bool minorKind = current.scale == engine::ScaleId::Minor || current.scale == engine::ScaleId::Dorian
+                               || current.scale == engine::ScaleId::Phrygian;
+        target.scale = minorKind ? current.scale : engine::ScaleId::Minor;
+    }
     return target;
 }
 
@@ -3076,6 +3081,7 @@ void ProgressionBar::showSettingsMenu()
                                 safe->processor.setLearnHints (! safe->processor.getLearnHints());
                             else if (safe != nullptr && result == 21)
                                 safe->processor.setSuggestInversions (! safe->processor.getSuggestInversions());
+
                             else if (safe != nullptr && result == 23)
                             {
                                 safe->processor.togglePreviewSound();
@@ -3970,6 +3976,13 @@ ProgrezzorEditor::ProgrezzorEditor (ProgrezzorProcessor& p)
     suggestButton.setTooltip ("A whole new progression");
     addAndMakeVisible (suggestButton);
 
+    // Under Suggest: how many chords it gives, 4 to 8 (the project keeps it)
+    suggestLengthSlider.setChords (processor.getSuggestLength());
+    suggestLengthSlider.setTooltip ("How many chords Suggest gives: 4 to 8");
+    suggestLengthSlider.setComponentID ("suggest-length");
+    suggestLengthSlider.onChoose = [this] (int chords) { processor.setSuggestLength (chords); };
+    addAndMakeVisible (suggestLengthSlider);
+
     saveButton.setTooltip ("Save the progression as a MIDI file");
     saveButton.onClick = [this] { saveMidi(); };
     addAndMakeVisible (saveButton);
@@ -4357,6 +4370,8 @@ void ProgrezzorEditor::updateNames()
 void ProgrezzorEditor::timerCallback()
 {
     processor.pollTrial(); // pads pressed while a block is selected are tried on that block
+    if (processor.getSuggestLength() != suggestLengthSlider.getChords()) // a project that was opened
+        suggestLengthSlider.setChords (processor.getSuggestLength());
     const auto key = processor.getKey();
     if (key.tonic != shownKey || (int) key.scale != shownScale || processor.getProgressionVersion() != shownProgression
         || processor.getTrialVersion() != shownTrial
@@ -4715,6 +4730,9 @@ void ProgrezzorEditor::resized()
     const float s = juce::jlimit (0.6f, 1.0f, (float) (top.getWidth() - logoWidth - 8) / (float) controlsAtFullSize);
     auto w = [s] (int x) { return juce::roundToInt ((float) x * s); };
 
+    // A row under the top bar: the Suggest length sits under Suggest, on the right
+    auto underTop = area.removeFromTop (24);
+    suggestLengthSlider.setBounds (underTop.removeFromRight (w (132)).reduced (0, 2));
     suggestButton.setBounds (top.removeFromRight (w (132)));
     top.removeFromRight (w (12));
     folderButton.setBounds (top.removeFromRight (w (104)));

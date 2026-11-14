@@ -26,6 +26,13 @@ Progression libraryProgression (Mood mood, bool major, int index, const Key& key
 // A progression is "major" if the scale is Major, otherwise minor. True if all its chords fit the scale of the key.
 bool libraryEntryFits (Mood mood, bool major, int index, ScaleId scale);
 
+// The same with the list chosen by a scale: Mixolydian and Lydian have lists of their own (1.1.0). Minor, Dorian and Phrygian
+// share the minor list, Major has the major list.
+int libraryCount (Mood mood, ScaleId listScale);
+Progression libraryProgression (Mood mood, ScaleId listScale, int index, const Key&);
+bool libraryEntryFits (Mood mood, ScaleId listScale, int index, ScaleId scale);
+bool libraryEntryOnPads (Mood mood, ScaleId listScale, int index, ScaleId scale);
+
 // True if every chord of the progression is one of the seven pads of the scale. Suggest only picks such progressions, so
 // that everything in the bar can also be played on the pads (chosen by Henrik after the test of milestone 3).
 bool libraryEntryOnPads (Mood mood, bool major, int index, ScaleId scale);
@@ -46,5 +53,7 @@ bool libraryEntryHasInversion (Mood mood, bool major, int index);
 
 // With `allowInversions` false (the setting "Inversions in suggestions"), progressions with inversions are not picked, so
 // every chord is in root position.
-Suggestion suggest (const Key& key, Mood mood, unsigned randomValue, int avoid, bool allowInversions = true);
+// `length` is how many chords the suggestion has (4, 8 or 16). When the chosen progression is shorter, the next ones that fit are
+// added after it, in turn, until it is long enough; a longer one is cut to the length. 0 keeps the progression as it is.
+Suggestion suggest (const Key& key, Mood mood, unsigned randomValue, int avoid, bool allowInversions = true, int length = 0);
 }

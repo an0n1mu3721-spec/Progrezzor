@@ -17,13 +17,13 @@ Version 1.0.0. Free and open source (GNU AGPLv3). CLAP and VST3 for Linux and Wi
 
 ## What it does
 
-- **Seven big pads** with the chords of your key and scale (Major, Minor, Dorian, Phrygian). Each chord has its own colour and
+- **Seven big pads** with the chords of your key and scale (Major, Minor, Dorian, Phrygian, Mixolydian, Lydian). Each chord has its own colour and
   shows its place in the key (I, ii, iii ...). The gear on a pad gives other kinds of the same chord (7, maj7, sus, add9 and
   more) and inversions. The blank pad on the right is a pause (Rest).
 - **Lock to scale.** On as standard, so pads, Suggest and the chord menus stay in the key. Need a chord from outside? The menus
   end with "More chords outside the key...".
 - **Mood and Suggest.** Pick one of eight moods (Bright, Warm, Dreamy, Melancholic, Dark, Deep, Driving, Soulful) and press
-  Suggest for a whole progression. Locked blocks stay where they are.
+  Suggest for a whole progression. Locked blocks stay where they are. A slider under Suggest sets 4 to 8 chords.
 - **The progression bar.** Drag a pad down to add a chord, or onto a block to replace it. Drag a block's right edge to change
   its length, drag a block to move it (hold Ctrl to copy it). Right-click a block, or use its small gear, to change its chord,
   inversion, octave and length, or to lock, duplicate or delete it. Undo and redo work everywhere.
@@ -74,7 +74,7 @@ and the progression plays twice.
 ## Limits
 
 - A progression holds up to 256 blocks.
-- Scales: Minor, Major, Dorian and Phrygian.
+- Scales: Minor, Major, Dorian, Phrygian, Mixolydian and Lydian.
 - Block lengths go in steps of 2 beats, so a half bar in 3/4 cannot be set exactly.
 - ChordPro import is a helper, not a guarantee. It reads the chords in square brackets, the title and the key, and skips lyrics, notes and most other markup. Always check the chords in Quick-text before you press Enter.
 - A capo is not read by the import, so the chords are taken as written.

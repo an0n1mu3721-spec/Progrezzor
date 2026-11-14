@@ -89,7 +89,7 @@ Akkordlogik, stemmeføring, rundgange, Suggest og Quick-text er nyt. CI og relea
 ## Akkordregler
 
 - De 7 pads bygges ved at stable skalatoner, så de altid passer til skalaen.
-- Skalaer i første version: Minor (standard), Major, Dorian, Phrygian.
+- Skalaer i første version: Minor (standard), Major, Dorian, Phrygian. Fra 1.1.0 også Mixolydian og Lydian (nye skalaer tilføjes altid til enden af listen, fordi rækkefølgen er gemt i projekter). Mixolydian: I ii iii° IV v vi bVII. Lydian: I II iii #iv° V vi vii. Begge bruger kun dur, mol og formindsket.
 - Akkordtyper: dur, m, 5, 7, m7, maj7, 9, m9, add9, sus2, sus4, dim og omvendinger.
 - Sus4 tilbydes med låsen til kun, hvis den rene kvart findes i skalaen. Sus2 kun, hvis den store sekund findes.
 - Akkordnavne staves efter tonearten (Bb frem for A#, når tonearten bruger b).
@@ -125,10 +125,11 @@ Mood bestemmer bibliotekets rundgange, akkordfarven og eventuelt registeret. Moo
 
 ## Forslag
 
+- Antal akkorder (1.1.0): En glider lige under 🎲 Suggest i topbjælken, fra 4 til 8 (standard 4). Den er ikke i Settings. Valget gemmes med projektet, og et projekt uden værdi får 4. Er forslaget kortere end valget, føjes de næste rundgange, der passer, til i rækkefølge, og er det længere, skæres det af. Låste blokke bliver på deres plads.
 - 🎲 Suggest lægger med ét klik en hel rundgang i bjælken. Blokke med 🔒 bliver liggende, og resten skiftes ud.
 - Biblioteket er håndskrevet og gemt som data, uafhængigt af toneart.
 - Mål: cirka 20 rundgange pr. stemning, både til dur og mol.
-- Dorian og Phrygian bruger de rundgange fra mol, der passer ind i skalaen.
+- Dorian og Phrygian bruger de rundgange fra mol, der passer ind i skalaen. Mixolydian og Lydian har hver deres liste med fem rundgange pr. stemning, skrevet i hånden, og de bruger kun deres egne pads.
 - Pads, der passer godt efter den sidste akkord, lyser op. Reglerne ligger i en håndskrevet tabel. Højst 3 pads lyser ad gangen, og alle pads virker altid.
 - Omvendinger (Henrik, 2026-11-08): Biblioteket kan angive en omvending på en akkord (C G/B Am F, gående bas), kun hvor den giver en hørbar forbedring, og kun i de stemninger, hvor den passer. Blokken viser navnet med skråstreg (G/B). Padsene ændres ikke, og en variant, brugeren har valgt på en pad, vinder over forslaget. Settings har "Inversions in suggestions" (til som standard, gemt for alle projekter); fra giver Suggest kun rundgange i grundstilling. Loop og MIDI-fil bruger samme toner som det, man hører.
 - Kvalitetsmål: Af 10 klik på 🎲 skal mindst 8 give noget, Henrik faktisk gider bruge.
@@ -253,7 +254,7 @@ Henrik, 2026-11-08. Når akkorder lægges ind med Quick-text (Enter), gættes to
 - En ChordPro-fil uden {key:} gættes ved import, ikke efter Enter: den toneart, som flest af akkorderne passer i (mindst tre ud af fire), spørges om med Switch og Keep i samme kort. Akkorder, der ikke kan læses som akkordnavne, tælles ikke med. Grundreglerne nedenfor gælder for Quick-text.
 - Ellers prøves alle 12 dur- og 12 mol-tonearter. En toneart passer, hvis alle akkorder ligger i dens skala. I mol tæller dur-akkorden på trin V (E i A Minor) også med.
 - Dur og mol-tvilling (G Major og E Minor) afgøres sådan: er første eller sidste akkord mol-tvillingens i-akkord (Em), gættes mol; er det dur-tonartens I-akkord (G), gættes dur; ellers vinder den, hvis grundakkord bruges oftest, og uafgjort er dur.
-- Passer flere forskellige tonearter: den, hvis grundakkord er første eller sidste akkord, ellers den, hvis grundakkord bruges oftest. Uafgjort giver intet gæt (fx "C G"). Passer ingen, gættes der ikke, og tonearten beholdes. Er gættet den nuværende toneart (Minor, Dorian og Phrygian tæller som mol), sker der intet.
+- Passer flere forskellige tonearter: den, hvis grundakkord er første eller sidste akkord, ellers den, hvis grundakkord bruges oftest. Uafgjort giver intet gæt (fx "C G"). Passer ingen, gættes der ikke, og tonearten beholdes. Mixolydian og Lydian gættes aldrig, og et gæt er aldrig en af dem. Er gættet den nuværende toneart (Minor, Dorian og Phrygian tæller som mol), sker der intet.
 - Visning: et kort nederst i rundgangsvinduet med "These chords fit A Minor." og knapperne "Switch to A Minor" og "Keep C Major". Ved Switch skifter tonearten, og akkorderne forbliver de samme akkorder (de gemmes som afstand fra tonika, så de flyttes med). Pauser tæller ikke med. Dur-akkorden på trin V tæller med i gættet, men er stadig uden for skalaen for Lock to scale.
 
 ## Stemmer

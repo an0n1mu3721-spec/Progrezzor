@@ -12,6 +12,10 @@ tag the commit (`vX.Y.Z`).
 
 ## [Unreleased]
 
+### Added
+- **Suggest makes 4 to 8 chords.** A slider under the Suggest button sets it (4 as standard). It is saved with the project; a project without the value has 4.
+- **Two new scales: Mixolydian and Lydian.** They have their own suggestions, five per mood, and their pads are the chords of the scale.
+
 ### Removed
 - **A ChordPro file can no longer be dragged onto the progression bar.** Use Settings > Import ChordPro... instead.
 

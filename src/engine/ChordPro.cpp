@@ -15,6 +15,13 @@ namespace engine
 {
 namespace
 {
+// Minor, Dorian and Phrygian are written as minor. Major, Mixolydian and Lydian are written as major (a ChordPro key has no
+// other kinds), so a Mixolydian or Lydian bar is read back as its major key.
+bool writtenAsMinor(ScaleId scale)
+{
+    return scale == ScaleId::Minor || scale == ScaleId::Dorian || scale == ScaleId::Phrygian;
+}
+
 std::string trim(const std::string& s)
 {
     size_t a = 0, b = s.size();
@@ -677,7 +684,7 @@ std::string exportChordPro(const Progression& progression, const Key& key, doubl
     const int measuresPerLine = 4;
 
     std::string text = "{title: " + title + "}\n";
-    text += "{key: " + keyName(key) + (key.scale == ScaleId::Major ? "" : "m") + "}\n";
+    text += "{key: " + keyName(key) + (writtenAsMinor(key.scale) ? "m" : "") + "}\n";
     text += "{start_of_grid shape=\"" + std::to_string(measuresPerLine) + "x" + std::to_string(cells) + "\"}\n";
 
     // The cells in order: a chord, then a dot for each cell it goes on
@@ -710,7 +717,7 @@ bool chordProKeyDiffers(const ChordProResult& result, const Key& key)
 {
     if (! result.hasKey)
         return false;
-    const bool minorNow = key.scale != ScaleId::Major;
+    const bool minorNow = writtenAsMinor(key.scale);
     return result.keyTonic != key.tonic || result.keyMinor != minorNow;
 }
 }

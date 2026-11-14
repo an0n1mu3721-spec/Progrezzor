@@ -1234,10 +1234,12 @@ void testLibraryMood (Mood mood)
     for (int scale = 0; scale < kNumScales; ++scale)
     {
         int fitting = 0;
-        const bool major = (ScaleId) scale == ScaleId::Major;
-        for (int i = 0; i < libraryCount (mood, major); ++i)
-            fitting += libraryEntryOnPads (mood, major, i, (ScaleId) scale);
-        std::printf ("  info: %s: %d of %d progressions can be suggested\n", scaleOf ((ScaleId) scale).name, fitting, libraryCount (mood, major));
+        // The list of the scale: Major has its own, Mixolydian and Lydian have theirs (1.1.0), the rest share the minor list
+        const ScaleId list = (ScaleId) scale == ScaleId::Major || (ScaleId) scale == ScaleId::Mixolydian || (ScaleId) scale == ScaleId::Lydian
+                                 ? (ScaleId) scale : ScaleId::Minor;
+        for (int i = 0; i < libraryCount (mood, list); ++i)
+            fitting += libraryEntryOnPads (mood, list, i, (ScaleId) scale);
+        std::printf ("  info: %s: %d of %d progressions can be suggested\n", scaleOf ((ScaleId) scale).name, fitting, libraryCount (mood, list));
         check (fitting >= 5, name + " " + scaleOf ((ScaleId) scale).name + ": at least 5 library progressions can be suggested, so Suggest does not run dry");
     }
 
@@ -2366,6 +2368,101 @@ void testRests()
     check (session.finished(), "a bar that ends with a pause finishes after the last chord");
 }
 
+// Suggest length (1.1.0): 4 to 8 chords (the slider under Suggest), always of pads that fit the scale, and the progressions go on in turn
+void testSuggestLength()
+{
+    std::printf ("suggest length\n");
+    bool exact = true, pads = true, fits = true, predictable = true;
+    for (int tonic = 0; tonic < 12; ++tonic)
+        for (int scale = 0; scale < kNumScales; ++scale)
+            for (int mood = 0; mood < kNumMoods; ++mood)
+                for (int length : { 4, 5, 6, 7, 8 })
+                    for (unsigned r = 0; r < 12; ++r)
+                    {
+                        const Key key { tonic, (ScaleId) scale };
+                        const auto a = suggest (key, (Mood) mood, r * 2654435761u, -1, true, length);
+                        const auto b = suggest (key, (Mood) mood, r * 2654435761u, -1, true, length);
+                        exact &= (int) a.blocks.size() == length;
+                        predictable &= namesOf (a.blocks, key) == namesOf (b.blocks, key);
+                        for (const auto& block : a.blocks)
+                        {
+                            pads &= isPadChord (block.chord, key.scale);
+                            fits &= chordFitsScale (block.chord, key.scale);
+                        }
+                    }
+    check (exact, "Suggest gives exactly 4 to 8 chords, in every key, scale and mood");
+    check (pads && fits, "and every chord is one of the pads of the scale");
+    check (predictable, "and the same random value gives the same progression");
+
+    // Locked blocks stay where they are when the suggestion is made (keepingLocked, as in the plug-in)
+    Progression old = suggest ({ 0, ScaleId::Major }, Mood::Bright, 5u, -1, true, 8).blocks;
+    old[2].locked = true;
+    const auto kept = keepingLocked (old, suggest ({ 0, ScaleId::Major }, Mood::Bright, 9u, -1, true, 8).blocks);
+    check (kept.size() == 8 && kept[2].chord == old[2].chord, "a locked chord stays where it is in an 8-chord suggestion");
+}
+
+// Mixolydian and Lydian (1.1.0): the pads, the spelling, the chord kinds, and the key a ChordPro file gives them
+void testNewScales()
+{
+    std::printf ("new scales\n");
+    const auto padNames = [] (const Key& key)
+    {
+        std::string out;
+        for (int pad = 0; pad < 7; ++pad)
+            out += (pad > 0 ? " " : "") + chordName (padChord (key.scale, pad), key);
+        return out;
+    };
+
+    // The pads: the scale's own chords, and only major, minor and diminished
+    checkEqual (padNames ({ 0, ScaleId::Mixolydian }), std::string ("C Dm Edim F Gm Am Bb"), "Mixolydian in C: I ii iii° IV v vi bVII");
+    checkEqual (padNames ({ 0, ScaleId::Lydian }), std::string ("C D Em F#dim G Am Bm"), "Lydian in C: I II iii #iv° V vi vii");
+    bool kinds = true;
+    for (ScaleId scale : { ScaleId::Mixolydian, ScaleId::Lydian })
+        for (int pad = 0; pad < 7; ++pad)
+        {
+            const auto chord = padChord (scale, pad);
+            kinds &= chord.type == ChordType::Major || chord.type == ChordType::Minor || chord.type == ChordType::Dim;
+        }
+    check (kinds, "every pad of the new scales is a major, minor or diminished chord (no new chord kind is needed)");
+
+    // The spelling follows the key: flats for Mixolydian in C (the notes of F Major), sharps for Lydian in C (G Major)
+    check (chordName ({ 10, ChordType::Major, kAutoInversion }, { 0, ScaleId::Mixolydian }) == "Bb", "Mixolydian in C spells the bVII as Bb");
+    check (chordName ({ 6, ChordType::Dim, kAutoInversion }, { 0, ScaleId::Lydian }) == "F#dim", "Lydian in C spells the #iv as F#");
+
+    // Lock to scale: a chord is in the new scale only if its notes are
+    check (chordFitsScale ({ 10, ChordType::Major, kAutoInversion }, ScaleId::Mixolydian) && ! chordFitsScale ({ 11, ChordType::Major, kAutoInversion }, ScaleId::Mixolydian),
+           "Lock to scale: Bb fits Mixolydian, B does not");
+
+    // A ChordPro file: the new scales are written as major (ChordPro has no mode), and the minor ones as minor
+    Block one;
+    one.chord = { 0, ChordType::Major, kAutoInversion };
+    one.beats = 4.0;
+    const auto mixo = exportChordPro ({ one }, { 0, ScaleId::Mixolydian }, 4.0);
+    check (mixo.find ("{key: C}") != std::string::npos && mixo.find ("{key: Cm}") == std::string::npos, "a Mixolydian bar is exported with the key C, not as minor");
+    check (! chordProKeyDiffers (readChordPro ("{key: C}\n[C]x"), { 0, ScaleId::Lydian }) && ! chordProKeyDiffers (readChordPro ("{key: C}\n[C]x"), { 0, ScaleId::Mixolydian }),
+           "a file that says C does not ask about a Mixolydian or Lydian key in C");
+    check (chordProKeyDiffers (readChordPro ("{key: Cm}\n[C]x"), { 0, ScaleId::Lydian }), "a file that says Cm is another key than Lydian in C");
+
+    // The key guess: Mixolydian and Lydian are never guessed, and a guess is not the same key as them
+    check (! sameKeyKind ({ 0, ScaleId::Major }, { 0, ScaleId::Lydian }) && ! sameKeyKind ({ 0, ScaleId::Minor }, { 0, ScaleId::Mixolydian })
+               && sameKeyKind ({ 0, ScaleId::Lydian }, { 0, ScaleId::Lydian }) && sameKeyKind ({ 0, ScaleId::Dorian }, { 0, ScaleId::Minor }),
+           "Lydian and Mixolydian are not the same key as major or minor; Dorian still counts as minor");
+
+    // The library of each new scale: five progressions per mood, all made of its pads and fitting it
+    bool enough = true, onPads = true;
+    for (int mood = 0; mood < kNumMoods; ++mood)
+        for (ScaleId scale : { ScaleId::Mixolydian, ScaleId::Lydian })
+        {
+            int pads = 0;
+            for (int i = 0; i < libraryCount ((Mood) mood, scale); ++i)
+                if (libraryEntryOnPads ((Mood) mood, scale, i, scale))
+                    ++pads;
+            enough &= pads >= 5 && libraryCount ((Mood) mood, scale) == pads;
+            onPads &= pads == libraryCount ((Mood) mood, scale);
+        }
+    check (enough && onPads, "each mood has at least 5 progressions for Mixolydian and for Lydian, all of them made of the pads");
+}
+
 int main()
 {
     testRests();
@@ -2401,6 +2498,8 @@ int main()
     testChosenInversion();
     testPredictableVoicing();
     testCloseVoicing();
+    testNewScales();
+    testSuggestLength();
 
     std::printf ("%d checks, %d failed\n", checks, failures);
     return failures == 0 ? 0 : 1;

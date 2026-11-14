@@ -11,8 +11,9 @@ constexpr int kNumKeys = 12;
 constexpr int noteNumber (int key, int octave, int interval) { return 12 * (octave + 1) + key + interval; }
 
 // What a saved project stores is the index, so the order can only grow at the end.
-enum class ScaleId { Minor, Major, Dorian, Phrygian };
-constexpr int kNumScales = 4;
+// The order is saved in projects: new scales are added at the end only.
+enum class ScaleId { Minor, Major, Dorian, Phrygian, Mixolydian, Lydian };
+constexpr int kNumScales = 6;
 
 struct Scale
 {
@@ -26,6 +27,8 @@ constexpr Scale scales[kNumScales] = {
     { "Major", { 0, 2, 4, 5, 7, 9, 11 }, 0 },
     { "Dorian", { 0, 2, 3, 5, 7, 9, 10 }, 10 },
     { "Phrygian", { 0, 1, 3, 5, 7, 8, 10 }, 8 },
+    { "Mixolydian", { 0, 2, 4, 5, 7, 9, 10 }, 5 },
+    { "Lydian", { 0, 2, 4, 6, 7, 9, 11 }, 7 },
 };
 
 constexpr const Scale& scaleOf (ScaleId id) { return scales[(int) id]; }

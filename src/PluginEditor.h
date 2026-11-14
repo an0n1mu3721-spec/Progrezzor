@@ -52,6 +52,87 @@ private:
     bool restPad = false;
 };
 
+// The length slider under Suggest: five steps, 4 to 8 chords, drawn in the plug-in's own colours. Click or drag to choose.
+class LengthSlider : public juce::Component, public juce::SettableTooltipClient
+{
+public:
+    std::function<void (int)> onChoose; // called when the user chooses a step
+
+    LengthSlider() { setMouseCursor (juce::MouseCursor::PointingHandCursor); }
+
+    int getChords() const { return chords; }
+    void setChords (int nowChords) { chords = juce::jlimit (4, 8, nowChords); repaint(); } // shows it, does not call onChoose
+    void choose (int nowChords) { setChords (nowChords); if (onChoose) onChoose (chords); }
+
+    void paint (juce::Graphics& g) override
+    {
+        const auto track = trackArea();
+        const float y = track.getCentreY();
+        const float step = track.getWidth() / 4.0f;
+        const float x = track.getX() + (float) (chords - 4) * step;
+
+        g.setColour (theme::dimText.withAlpha (0.35f));
+        g.drawLine (track.getX(), y, track.getRight(), y, 2.0f);
+        g.setColour (theme::accent);
+        g.drawLine (track.getX(), y, x, y, 3.0f);
+        g.setColour (theme::dimText.withAlpha (0.6f));
+        for (int i = 0; i <= 4; ++i)
+            g.fillEllipse (track.getX() + (float) i * step - 2.0f, y - 2.0f, 4.0f, 4.0f);
+        g.setColour (theme::accent);
+        g.fillEllipse (x - 6.5f, y - 6.5f, 13.0f, 13.0f);
+
+        // The number, and "chords" in small type after it, ending at the right edge (under the Suggest button's right edge)
+        const auto font = fontOf (17.0f);
+        const auto small = fontOf (13.0f);
+        const auto number = juce::String (chords);
+        const int numberWidth = juce::GlyphArrangement::getStringWidthInt (font, number);
+        const int left = textLeft();
+        g.setColour (theme::text);
+        g.setFont (font);
+        g.drawText (number, juce::Rectangle<int> (left, 0, numberWidth, getHeight()), juce::Justification::centredLeft);
+        g.setColour (theme::dimText);
+        g.setFont (small);
+        g.drawText ("chords", juce::Rectangle<int> (left + numberWidth + 4, 0, getWidth() - left - numberWidth - 4, getHeight()), juce::Justification::centredLeft);
+    }
+
+    void mouseDown (const juce::MouseEvent& e) override { pick (e); }
+    void mouseDrag (const juce::MouseEvent& e) override { pick (e); }
+
+private:
+    // Where the number starts: the number and "chords" end at the right edge of the component
+    int textLeft() const
+    {
+        const int numberWidth = juce::GlyphArrangement::getStringWidthInt (fontOf (17.0f), juce::String (chords));
+        const int wordWidth = juce::GlyphArrangement::getStringWidthInt (fontOf (13.0f), juce::String ("chords"));
+        return getWidth() - (numberWidth + 4 + wordWidth);
+    }
+
+    // The track runs from the left edge up to the text
+    juce::Rectangle<float> trackArea() const
+    {
+        const auto b = getLocalBounds().toFloat();
+        return { 6.0f, b.getCentreY() - 6.0f, (float) textLeft() - 16.0f, 12.0f };
+    }
+
+    juce::Font fontOf (float size) const
+    {
+        if (auto* l = dynamic_cast<theme::LookAndFeel*> (&getLookAndFeel()))
+            return l->labelFont (size);
+        return juce::Font (juce::FontOptions (size));
+    }
+
+    void pick (const juce::MouseEvent& e)
+    {
+        const auto track = trackArea();
+        const float fraction = (e.position.x - track.getX()) / track.getWidth();
+        const int nowChords = 4 + juce::roundToInt (juce::jlimit (0.0f, 1.0f, fraction) * 4.0f);
+        if (nowChords != chords)
+            choose (nowChords);
+    }
+
+    int chords = 4;
+};
+
 // The Suggest button: a die and the word. One click fills the bar with a whole progression.
 class SuggestButton : public juce::Button
 {
@@ -467,6 +548,7 @@ public:
     PadButton& getPad (int i) { return pads[(size_t) i]; }
     PadButton& getRestPad() { return restPad; }
     juce::Button& getSuggestButton() { return suggestButton; }
+    LengthSlider& getSuggestLengthSlider() { return suggestLengthSlider; }
     void showVariantMenu (int pad);
     void saveMidi(); // the Save MIDI button
     BarButton& getSaveButton() { return saveButton; }
@@ -518,6 +600,7 @@ private:
     std::unique_ptr<juce::ButtonParameterAttachment> lockAttachment;
     std::unique_ptr<juce::TooltipWindow> tooltipWindow; // gone when tooltips are switched off in Settings
     SuggestButton suggestButton;
+    LengthSlider suggestLengthSlider; // under Suggest: how many chords it gives, 4 to 8 (saved with the project)
     juce::Rectangle<int> padLabel;
     BarButton saveButton { "Save MIDI", BarButton::Icon::None };
     BarButton folderButton { "Open Folder", BarButton::Icon::None };

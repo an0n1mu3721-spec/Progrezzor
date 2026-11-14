@@ -72,6 +72,7 @@ ProgrezzorProcessor::ProgrezzorProcessor()
                                                                        juce::StringArray (engine::rhythmPatternNames, engine::kNumRhythmPatterns), 0));
     addParameter (rhythmSpeedParam = new juce::AudioParameterChoice ({ "rhythmSpeed", 1 }, "Rhythm Speed", juce::StringArray (engine::rhythmSpeedNames, engine::kNumRhythmSpeeds), 0));
     addParameter (rhythmLengthParam = new juce::AudioParameterChoice ({ "rhythmLength", 1 }, "Rhythm Length", juce::StringArray (engine::rhythmLengthNames, engine::kNumRhythmLengths), 1));
+    addParameter (suggestLengthParam = new juce::AudioParameterInt ({ "suggestLength", 1 }, "Suggest Length", 4, 8, 4)); // added last: a project without it gets 4
 
     // Where the chords usually sit: the user's own setting, the same in every project
     if (const auto settings = juce::parseXML (getSettingsFile()))
@@ -1068,7 +1069,7 @@ void ProgrezzorProcessor::allowOutsideScale()
 void ProgrezzorProcessor::suggestProgression()
 {
     // The chords of a suggestion are stored as distances from the tonic, so they follow the key by themselves
-    auto suggestion = engine::suggest (getKey(), getMood(), (unsigned) random.nextInt(), lastSuggestion, suggestInversions.load());
+    auto suggestion = engine::suggest (getKey(), getMood(), (unsigned) random.nextInt(), lastSuggestion, suggestInversions.load(), getSuggestLength());
     lastSuggestion = suggestion.index;
 
     // The library counts a bar as 4 beats; in the host's time signature a bar is what it is (3 beats in 3/4)
@@ -1213,6 +1214,19 @@ void ProgrezzorProcessor::setLearnHints (bool nowOn)
     writeSettings();
 }
 
+int ProgrezzorProcessor::getSuggestLength() const
+{
+    return suggestLengthParam->get();
+}
+
+void ProgrezzorProcessor::setSuggestLength (int chords)
+{
+    const int value = juce::jlimit (4, 8, chords);
+    suggestLengthParam->beginChangeGesture();
+    suggestLengthParam->setValueNotifyingHost (suggestLengthParam->convertTo0to1 ((float) value));
+    suggestLengthParam->endChangeGesture();
+}
+
 void ProgrezzorProcessor::setSuggestInversions (bool nowOn)
 {
     suggestInversions.store (nowOn);
@@ -1342,6 +1356,7 @@ void ProgrezzorProcessor::getStateInformation (juce::MemoryBlock& destination)
     xml.setAttribute ("rhythmPattern", rhythmPatternParam->getIndex());
     xml.setAttribute ("rhythmSpeed", rhythmSpeedParam->getIndex());
     xml.setAttribute ("rhythmLength", rhythmLengthParam->getIndex());
+    xml.setAttribute ("suggestLength", suggestLengthParam->get());
     xml.setAttribute ("arpOn", arpOnParam->get() ? 1 : 0);
     xml.setAttribute ("arpStyle", arpStyleParam->getIndex());
     xml.setAttribute ("arpRate", arpRateParam->getIndex());
@@ -1397,6 +1412,7 @@ void ProgrezzorProcessor::setStateInformation (const void* data, int size)
     set (*rhythmPatternParam, xml->getIntAttribute ("rhythmPattern", 0));
     set (*rhythmSpeedParam, xml->getIntAttribute ("rhythmSpeed", 0));
     set (*rhythmLengthParam, xml->getIntAttribute ("rhythmLength", 1));
+    *suggestLengthParam = juce::jlimit (4, 8, xml->getIntAttribute ("suggestLength", 4)); // a project without the value: 4 chords
     set (*voicingParam, xml->getIntAttribute ("voicing", 0)); // projects saved before have root position
     set (*keyboardModeParam, xml->getIntAttribute ("keyboardMode", kKeyboardWhiteKeys)); // projects saved before have the white keys
     *bassParam = xml->getIntAttribute ("bassNote", 0) != 0; // projects saved before the bass note have it off

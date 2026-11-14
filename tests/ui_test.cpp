@@ -1446,6 +1446,42 @@ int main (int argc, char** argv)
                "the variants come back from a saved project");
         check (! other.canUndo(), "a loaded project starts without undo history");
 
+        // Suggest length: saved with the project; a project saved before 1.1.0 has no value and gets 8 chords
+        processor.setSuggestLength (6);
+        juce::MemoryBlock withLength;
+        processor.getStateInformation (withLength);
+        other.setSuggestLength (4);
+        other.setStateInformation (withLength.getData(), (int) withLength.getSize());
+        check (other.getSuggestLength() == 6, "the Suggest length comes back from a saved project (6)");
+        if (auto xml = ProgrezzorProcessor::getXmlFromBinary (withLength.getData(), (int) withLength.getSize()))
+        {
+            xml->removeAttribute ("suggestLength"); // what an older project looks like
+            juce::MemoryBlock old;
+            juce::AudioProcessor::copyXmlToBinary (*xml, old);
+            other.setSuggestLength (4);
+            other.setStateInformation (old.getData(), (int) old.getSize());
+            check (other.getSuggestLength() == 4, "a project without the value gets 4 chords");
+        }
+        // The slider under Suggest is the same setting as the processor's
+        auto& slider = static_cast<ProgrezzorEditor*> (editor.get())->getSuggestLengthSlider();
+        slider.choose (7);
+        check (processor.getSuggestLength() == 7, "the slider under Suggest sets the chords (7)");
+        processor.setSuggestLength (5);
+        settle (5);
+        check (slider.getChords() == 5, "and a change made elsewhere moves the slider");
+        // The plug-in's Suggest gives the chosen number of chords
+        const auto barNow = processor.getProgression();
+        processor.setProgression ({});
+        for (int chords : { 4, 8 })
+        {
+            processor.setSuggestLength (chords);
+            processor.suggestProgression();
+            check ((int) processor.getProgression().size() == chords, "Suggest gives " + std::to_string (chords) + " chords");
+            processor.setProgression ({});
+        }
+        processor.setProgression (barNow);
+        processor.setSuggestLength (4);
+
         processor.clearPadVariant (0);
         check (processor.getPadChord (0).type == engine::ChordType::Minor, "back to the pad's own chord");
         juce::ignoreUnused (ui);

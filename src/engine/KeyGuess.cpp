@@ -135,6 +135,10 @@ KeyGuess guessKey(const std::vector<GuessChord>& chords)
 
 bool sameKeyKind(const Key& a, const Key& b)
 {
+    // Mixolydian and Lydian are not guessed, and a guess is never one of them: they are the same only as themselves
+    const auto own = [] (ScaleId s) { return s == ScaleId::Mixolydian || s == ScaleId::Lydian; };
+    if (own(a.scale) || own(b.scale))
+        return a.tonic == b.tonic && a.scale == b.scale;
     return a.tonic == b.tonic && (a.scale == ScaleId::Major) == (b.scale == ScaleId::Major);
 }
 }

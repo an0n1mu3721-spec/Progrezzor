@@ -72,6 +72,7 @@ public:
     juce::AudioParameterChoice* rhythmPatternParam = nullptr;
     juce::AudioParameterChoice* rhythmSpeedParam = nullptr;
     juce::AudioParameterChoice* rhythmLengthParam = nullptr;
+    juce::AudioParameterInt* suggestLengthParam = nullptr; // how many chords Suggest gives, 4 to 8 (the slider under Suggest; added in 1.1.0)
     juce::AudioParameterChoice* keyboardModeParam = nullptr; // White keys (as standard) or Chord roots: which pad a MIDI key plays
     juce::AudioParameterChoice* voicingParam = nullptr; // Settings > Voicing: Root position (as standard) or Nearest inversion
     juce::AudioParameterBool* bassParam = nullptr;    // an extra bass note under every chord (Settings: Bass note), off as standard
@@ -218,6 +219,8 @@ public:
     void togglePreviewSound(); // Settings: Preview sound. Off, or back to the sound chosen last. Message thread.
     const PianoBank& getPianoBank() const { return pianoBank; } // the samples of Piano, for the tests
     int getLastPreviewVoice() const { return lastPreviewVoice.load(); }
+    int getSuggestLength() const;                 // 4 to 8 chords
+    void setSuggestLength (int chords);           // message thread: a project setting, saved with the project
     bool getSuggestInversions() const { return suggestInversions.load(); } // Suggest may use inversions (G/B), on as standard
     void setSuggestInversions (bool nowOn); // message thread: kept in the settings file
     bool isKeyHeld (int note) const { return note >= 0 && note < 128 && ((heldKeys[(size_t) (note / 64)].load() >> (note % 64)) & 1u) != 0; } // a key of the MIDI keyboard

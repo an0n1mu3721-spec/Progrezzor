@@ -515,6 +515,154 @@ constexpr Entry soulfulMajor[] = {
     { 4, { { 5, Ma, 4 }, { 4, Mi, 4 }, { 2, Mi, 4 }, { 0, Ma, 4, 1 } } },
 };
 
+// Mixolydian and Lydian (added in 1.1.0): written by hand, five progressions per mood. Each uses only the pads of its scale
+// (Mixolydian: I ii iii° IV v vi bVII; Lydian: I II iii #iv° V vi vii), so Suggest can always play them. Every pad is in
+// at least two of the five progressions of each mood, so that Suggest gives all of them.
+
+constexpr Entry brightMixolydian[] = {
+    { 4, { { 0, Ma, 4 }, { 10, Ma, 4 }, { 5, Ma, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 2, Mi, 4 }, { 5, Ma, 4 }, { 9, Mi, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 4, Di, 4 }, { 5, Ma, 4 }, { 7, Mi, 4 } } },
+    { 4, { { 2, Mi, 4 }, { 7, Mi, 4 }, { 0, Ma, 4 }, { 10, Ma, 4 } } },
+    { 4, { { 5, Ma, 4 }, { 4, Di, 4 }, { 0, Ma, 4 }, { 10, Ma, 4 } } },
+};
+
+
+constexpr Entry warmMixolydian[] = {
+    { 4, { { 0, Ma, 4 }, { 4, Di, 4 }, { 5, Ma, 4 }, { 10, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 10, Ma, 4 }, { 9, Mi, 4 }, { 5, Ma, 4 } } },
+    { 4, { { 2, Mi, 4 }, { 5, Ma, 4 }, { 0, Ma, 4 }, { 10, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 9, Mi, 4 }, { 4, Di, 4 }, { 7, Mi, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 2, Mi, 4 }, { 7, Mi, 4 }, { 5, Ma, 4 } } },
+};
+
+
+constexpr Entry dreamyMixolydian[] = {
+    { 4, { { 0, Ma, 4 }, { 4, Di, 4 }, { 5, Ma, 4 }, { 10, Ma, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 5, Ma, 4 }, { 10, Ma, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 4, Di, 4 }, { 2, Mi, 4 }, { 10, Ma, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 5, Ma, 4 }, { 7, Mi, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 2, Mi, 4 }, { 7, Mi, 4 }, { 5, Ma, 4 }, { 0, Ma, 4 } } },
+};
+
+
+constexpr Entry melancholicMixolydian[] = {
+    { 4, { { 9, Mi, 4 }, { 5, Ma, 4 }, { 0, Ma, 4 }, { 7, Mi, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 4, Di, 4 }, { 9, Mi, 4 }, { 5, Ma, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 10, Ma, 4 }, { 5, Ma, 4 }, { 7, Mi, 4 } } },
+    { 4, { { 2, Mi, 4 }, { 7, Mi, 4 }, { 5, Ma, 4 }, { 10, Ma, 4 } } },
+    { 4, { { 2, Mi, 4 }, { 4, Di, 4 }, { 9, Mi, 4 }, { 7, Mi, 4 } } },
+};
+
+
+constexpr Entry darkMixolydian[] = {
+    { 4, { { 9, Mi, 4 }, { 7, Mi, 4 }, { 10, Ma, 4 }, { 7, Mi, 4 } } },
+    { 4, { { 2, Mi, 4 }, { 7, Mi, 4 }, { 0, Ma, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 7, Mi, 4 }, { 10, Ma, 4 }, { 9, Mi, 4 }, { 4, Di, 4 } } },
+    { 4, { { 4, Di, 4 }, { 2, Mi, 4 }, { 5, Ma, 4 }, { 7, Mi, 4 } } },
+    { 4, { { 7, Mi, 4 }, { 5, Ma, 4 }, { 9, Mi, 4 }, { 10, Ma, 4 } } },
+};
+
+
+constexpr Entry deepMixolydian[] = {
+    { 4, { { 0, Ma, 4 }, { 5, Ma, 4 }, { 0, Ma, 4 }, { 10, Ma, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 2, Mi, 4 }, { 9, Mi, 4 }, { 2, Mi, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 4, Di, 4 }, { 5, Ma, 4 }, { 10, Ma, 4 } } },
+    { 4, { { 7, Mi, 4 }, { 9, Mi, 4 }, { 7, Mi, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 4, Di, 4 }, { 9, Mi, 4 }, { 10, Ma, 4 }, { 0, Ma, 4 } } },
+};
+
+
+constexpr Entry drivingMixolydian[] = {
+    { 4, { { 0, Ma, 4 }, { 7, Mi, 4 }, { 9, Mi, 4 }, { 5, Ma, 4 } } },
+    { 4, { { 2, Mi, 4 }, { 10, Ma, 4 }, { 5, Ma, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 10, Ma, 4 }, { 5, Ma, 4 }, { 0, Ma, 4 }, { 7, Mi, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 5, Ma, 4 }, { 4, Di, 4 }, { 7, Mi, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 2, Mi, 4 }, { 4, Di, 4 }, { 10, Ma, 4 } } },
+};
+
+
+constexpr Entry soulfulMixolydian[] = {
+    { 4, { { 2, Mi, 4 }, { 7, Mi, 4 }, { 0, Ma, 4 }, { 10, Ma, 4 } } },
+    { 4, { { 2, Mi, 4 }, { 10, Ma, 4 }, { 0, Ma, 4 }, { 4, Di, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 2, Mi, 4 }, { 10, Ma, 4 }, { 5, Ma, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 2, Mi, 4 }, { 4, Di, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 5, Ma, 4 }, { 7, Mi, 4 }, { 0, Ma, 4 } } },
+};
+
+
+constexpr Entry brightLydian[] = {
+    { 4, { { 0, Ma, 4 }, { 2, Ma, 4 }, { 7, Ma, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 4, Mi, 4 }, { 9, Mi, 4 }, { 7, Ma, 4 } } },
+    { 4, { { 6, Di, 4 }, { 7, Ma, 4 }, { 0, Ma, 4 }, { 11, Mi, 4 } } },
+    { 4, { { 11, Mi, 4 }, { 4, Mi, 4 }, { 2, Ma, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 6, Di, 4 }, { 7, Ma, 4 }, { 9, Mi, 4 } } },
+};
+
+
+constexpr Entry warmLydian[] = {
+    { 4, { { 0, Ma, 4 }, { 2, Ma, 4 }, { 9, Mi, 4 }, { 7, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 4, Mi, 4 }, { 6, Di, 4 }, { 7, Ma, 4 } } },
+    { 4, { { 2, Ma, 4 }, { 0, Ma, 4 }, { 11, Mi, 4 }, { 7, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 11, Mi, 4 }, { 0, Ma, 4 }, { 6, Di, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 2, Ma, 4 }, { 4, Mi, 4 }, { 0, Ma, 4 } } },
+};
+
+
+constexpr Entry dreamyLydian[] = {
+    { 4, { { 0, Ma, 4 }, { 6, Di, 4 }, { 7, Ma, 4 }, { 2, Ma, 4 } } },
+    { 4, { { 11, Mi, 4 }, { 9, Mi, 4 }, { 2, Ma, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 6, Di, 4 }, { 7, Ma, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 11, Mi, 4 }, { 4, Mi, 4 }, { 2, Ma, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 4, Mi, 4 }, { 9, Mi, 4 }, { 7, Ma, 4 } } },
+};
+
+
+constexpr Entry melancholicLydian[] = {
+    { 4, { { 9, Mi, 4 }, { 2, Ma, 4 }, { 4, Mi, 4 }, { 11, Mi, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 4, Mi, 4 }, { 9, Mi, 4 }, { 2, Ma, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 7, Ma, 4 }, { 2, Ma, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 4, Mi, 4 }, { 11, Mi, 4 }, { 6, Di, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 6, Di, 4 }, { 4, Mi, 4 }, { 7, Ma, 4 } } },
+};
+
+
+constexpr Entry darkLydian[] = {
+    { 4, { { 11, Mi, 4 }, { 4, Mi, 4 }, { 9, Mi, 4 }, { 6, Di, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 6, Di, 4 }, { 11, Mi, 4 }, { 4, Mi, 4 } } },
+    { 4, { { 4, Mi, 4 }, { 11, Mi, 4 }, { 0, Ma, 4 }, { 7, Ma, 4 } } },
+    { 4, { { 2, Ma, 4 }, { 9, Mi, 4 }, { 4, Mi, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 7, Ma, 4 }, { 2, Ma, 4 }, { 9, Mi, 4 }, { 11, Mi, 4 } } },
+};
+
+
+constexpr Entry deepLydian[] = {
+    { 4, { { 0, Ma, 4 }, { 2, Ma, 4 }, { 0, Ma, 4 }, { 2, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 7, Ma, 4 }, { 0, Ma, 4 }, { 2, Ma, 4 } } },
+    { 4, { { 4, Mi, 4 }, { 11, Mi, 4 }, { 6, Di, 4 }, { 2, Ma, 4 } } },
+    { 4, { { 9, Mi, 4 }, { 7, Ma, 4 }, { 2, Ma, 4 }, { 7, Ma, 4 } } },
+    { 4, { { 11, Mi, 4 }, { 9, Mi, 4 }, { 4, Mi, 4 }, { 6, Di, 4 } } },
+};
+
+
+constexpr Entry drivingLydian[] = {
+    { 4, { { 2, Ma, 4 }, { 7, Ma, 4 }, { 0, Ma, 4 }, { 7, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 4, Mi, 4 }, { 7, Ma, 4 }, { 9, Mi, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 6, Di, 4 }, { 0, Ma, 4 }, { 7, Ma, 4 } } },
+    { 4, { { 7, Ma, 4 }, { 0, Ma, 4 }, { 11, Mi, 4 }, { 9, Mi, 4 } } },
+    { 4, { { 4, Mi, 4 }, { 6, Di, 4 }, { 11, Mi, 4 }, { 0, Ma, 4 } } },
+};
+
+
+constexpr Entry soulfulLydian[] = {
+    { 4, { { 9, Mi, 4 }, { 2, Ma, 4 }, { 7, Ma, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 4, Mi, 4 }, { 9, Mi, 4 }, { 2, Ma, 4 }, { 7, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 9, Mi, 4 }, { 4, Mi, 4 }, { 2, Ma, 4 } } },
+    { 4, { { 7, Ma, 4 }, { 6, Di, 4 }, { 11, Mi, 4 }, { 0, Ma, 4 } } },
+    { 4, { { 0, Ma, 4 }, { 6, Di, 4 }, { 11, Mi, 4 }, { 2, Ma, 4 } } },
+};
+
+
 List listFor (Mood mood, bool major)
 {
     switch (mood)
@@ -529,6 +677,45 @@ List listFor (Mood mood, bool major)
         case Mood::Soulful:     return major ? listOf (soulfulMajor)     : listOf (soulfulMinor);
     }
     return { nullptr, 0 };
+}
+
+// The list for a scale. Major has its own list, Mixolydian and Lydian have their own (added in 1.1.0), and Minor, Dorian and
+// Phrygian share the minor list.
+List listForScale (Mood mood, ScaleId scale)
+{
+    switch (scale)
+    {
+        case ScaleId::Major:
+            return listFor (mood, true);
+        case ScaleId::Mixolydian:
+            switch (mood)
+            {
+                case Mood::Bright:      return listOf (brightMixolydian);
+                case Mood::Warm:        return listOf (warmMixolydian);
+                case Mood::Dreamy:      return listOf (dreamyMixolydian);
+                case Mood::Melancholic: return listOf (melancholicMixolydian);
+                case Mood::Dark:        return listOf (darkMixolydian);
+                case Mood::Deep:        return listOf (deepMixolydian);
+                case Mood::Driving:     return listOf (drivingMixolydian);
+                case Mood::Soulful:     return listOf (soulfulMixolydian);
+            }
+            return { nullptr, 0 };
+        case ScaleId::Lydian:
+            switch (mood)
+            {
+                case Mood::Bright:      return listOf (brightLydian);
+                case Mood::Warm:        return listOf (warmLydian);
+                case Mood::Dreamy:      return listOf (dreamyLydian);
+                case Mood::Melancholic: return listOf (melancholicLydian);
+                case Mood::Dark:        return listOf (darkLydian);
+                case Mood::Deep:        return listOf (deepLydian);
+                case Mood::Driving:     return listOf (drivingLydian);
+                case Mood::Soulful:     return listOf (soulfulLydian);
+            }
+            return { nullptr, 0 };
+        default:
+            return listFor (mood, false);
+    }
 }
 
 Progression toProgression (const Entry& entry, bool withInversions = true)
@@ -607,10 +794,35 @@ bool libraryEntryHasInversion (Mood mood, bool major, int index)
     return index >= 0 && index < list.count && hasInversion (list.entries[index]);
 }
 
-Suggestion suggest (const Key& key, Mood mood, unsigned randomValue, int avoid, bool allowInversions)
+// The same, with the list chosen by the scale (Mixolydian and Lydian have lists of their own). `listScale` is the list to use.
+int libraryCount (Mood mood, ScaleId listScale)
 {
-    const bool major = key.scale == ScaleId::Major;
-    const auto list = listFor (mood, major);
+    return listForScale (mood, listScale).count;
+}
+
+Progression libraryProgression (Mood mood, ScaleId listScale, int index, const Key&)
+{
+    const auto list = listForScale (mood, listScale);
+    if (index < 0 || index >= list.count)
+        return {};
+    return toProgression (list.entries[index]);
+}
+
+bool libraryEntryFits (Mood mood, ScaleId listScale, int index, ScaleId scale)
+{
+    const auto list = listForScale (mood, listScale);
+    return index >= 0 && index < list.count && entryFits (list.entries[index], scale);
+}
+
+bool libraryEntryOnPads (Mood mood, ScaleId listScale, int index, ScaleId scale)
+{
+    const auto list = listForScale (mood, listScale);
+    return index >= 0 && index < list.count && entryFits (list.entries[index], scale) && entryOnPads (list.entries[index], scale);
+}
+
+Suggestion suggest (const Key& key, Mood mood, unsigned randomValue, int avoid, bool allowInversions, int length)
+{
+    const auto list = listForScale (mood, key.scale);
 
     int candidates[64];
     int numCandidates = 0;
@@ -619,12 +831,31 @@ Suggestion suggest (const Key& key, Mood mood, unsigned randomValue, int avoid, 
             candidates[numCandidates++] = i;
 
     if (numCandidates == 0)
-        return { fromPads (key.scale, randomValue), -1 };
+    {
+        Progression blocks = fromPads (key.scale, randomValue);
+        for (unsigned step = 1; length > 0 && (int) blocks.size() < length; ++step)
+        {
+            const auto more = fromPads (key.scale, randomValue + step);
+            blocks.insert (blocks.end(), more.begin(), more.end());
+        }
+        if (length > 0)
+            blocks.resize ((size_t) length);
+        return { blocks, -1 };
+    }
 
     int pick = (int) (randomValue % (unsigned) numCandidates);
     if (numCandidates > 1 && candidates[pick] == avoid)
         pick = (pick + 1) % numCandidates;
 
-    return { toProgression (list.entries[candidates[pick]], allowInversions), candidates[pick] };
+    Progression blocks = toProgression (list.entries[candidates[pick]], allowInversions);
+    // The next progressions that fit, in turn after the chosen one (deterministic: the same number gives the same suggestion)
+    for (int step = 1; length > 0 && (int) blocks.size() < length; ++step)
+    {
+        const auto more = toProgression (list.entries[candidates[(pick + step) % numCandidates]], allowInversions);
+        blocks.insert (blocks.end(), more.begin(), more.end());
+    }
+    if (length > 0)
+        blocks.resize ((size_t) length);
+    return { blocks, candidates[pick] };
 }
 }
