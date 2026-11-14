@@ -3040,12 +3040,10 @@ int main (int argc, char** argv)
         const auto barBefore = processor.getProgression();
         const auto silentBlocks = [&] { int n = 0; for (int i = 0; i < (int) processor.getProgression().size(); ++i) n += processor.isBlockSilent (i) ? 1 : 0; return n; };
 
-        // Play: nothing can be imported, and a file dragged on is not wanted
+        // Not editing: nothing can be imported
         bar.setEditing (false);
-        check (! bar.importChordProFile (folder.getChildFile ("simple.cho")) && ! bar.isInterestedInFileDrag ({ folder.getChildFile ("simple.cho").getFullPathName() }), "in Play nothing is imported");
+        check (! bar.importChordProFile (folder.getChildFile ("simple.cho")), "when the bar is not editable nothing is imported");
         bar.setEditing (true);
-        check (bar.isInterestedInFileDrag ({ folder.getChildFile ("simple.cho").getFullPathName() }) && ! bar.isInterestedInFileDrag ({ "/tmp/song.mid" })
-                   && ! bar.isInterestedInFileDrag ({ "a.cho", "b.cho" }), "a ChordPro file can be dragged on, other files not");
 
         // A plain file: the chords are in the field as Quick-text, and the bar is not changed until Enter
         check (bar.importChordProFile (folder.getChildFile ("simple.cho")), "the file is read");
@@ -3070,41 +3068,72 @@ int main (int argc, char** argv)
         check (bar.isInTextMode() && bar.getTextEditor().getText() == "| C | Am | F | G | C | Dm | Em | Am | F | G | Dm | G |", "the whole song is in the field, the labels left out");
         bar.cancelQuickText();
 
-        // The key: asked about, never changed by itself
-        bar.importChordProFile (folder.getChildFile ("key.cho"));
+        // The key the file says: asked about on import, kept after Enter, never changed by itself
+        bar.importChordProFile (folder.getChildFile ("key.cho")); // {key: G} while in C Major
         settle (60);
-        check (bar.getSwitchKeyButton().isVisible() && bar.getNotice().contains ("G major") && bar.getNotice().contains ("Switch the key?"), "the song's key is asked about");
+        check (bar.isAskingFileKey() && bar.getQuestion() == "The song says it is in G major. Switch the key?" && bar.getGuessSwitchButton().isVisible()
+                   && bar.getGuessSwitchButton().getButtonText() == "Switch to G Major" && bar.getGuessKeepButton().getButtonText() == "Keep C Major",
+               "the song's key is asked about on import, with Switch and Keep");
         check (processor.keyParam->getIndex() == 0 && processor.getKey().scale == engine::ScaleId::Major, "the key is not changed by itself");
         snapshot ("chordpro_key");
-        bar.getSwitchKeyButton().triggerClick();
+
+        // A misspelled chord in the text does not hide the question
+        bar.getTextEditor().setText ("G Em C Xq", true); // true: the text change is seen, as when typing
         settle (60);
-        check (processor.keyParam->getIndex() == 7 && processor.getKey().scale == engine::ScaleId::Major && ! bar.getSwitchKeyButton().isVisible(), "Switch key changes it to G major");
-        check (bar.getTextEditor().getText() == "| G | Em | C | D |", "the chords in the text are the same");
+        check (bar.isAskingFileKey() && bar.getGuessSwitchButton().isVisible() && bar.getNotice().contains ("Xq"), "a misspelled chord does not hide the question");
+        bar.getTextEditor().setText ("| G | Em | C | D |", true);
+        settle (60);
+
+        // Enter does not remove the question; the scale notice is shown with it (D is outside C Major)
         bar.applyQuickText();
-        check (processor.getProgression().size() == 4 && processor.getProgression()[0].chord.root == 0 && processor.getProgression()[3].chord.root == 7 && silentBlocks() == 0, "and they are I, vi, IV and V of G: nothing outside the key");
-        processor.undo();
+        settle (60);
+        check (! bar.isInTextMode() && bar.isAskingFileKey() && bar.getQuestion() == "The song says it is in G major. Switch the key?",
+               "Enter does not remove the question");
+        check (bar.getNotice().contains ("not in the scale") && bar.getGuessSwitchButton().isVisible(), "the scale notice is shown, and the question with its buttons");
+        snapshot ("chordpro_key_after_enter");
+
+        // Switch: the key changes to G once, and the chords stay the same chords
+        bar.getGuessSwitchButton().triggerClick();
+        settle (60);
+        check (processor.keyParam->getIndex() == 7 && processor.getKey().scale == engine::ScaleId::Major && ! bar.isAskingFileKey(), "Switch changes the key to G major");
+        check (processor.getProgression().size() == 4 && processor.getProgression()[0].chord.root == 0 && processor.getProgression()[3].chord.root == 7 && silentBlocks() == 0,
+               "and the chords are I, vi, IV and V of G: nothing outside the key");
+
         // Already in that key: no question
         bar.importChordProFile (folder.getChildFile ("key.cho"));
-        check (! bar.getSwitchKeyButton().isVisible(), "a song in the key we are in asks nothing");
+        check (! bar.isAskingFileKey(), "a song in the key we are in asks nothing");
         bar.cancelQuickText();
-        // A minor key
-        bar.importChordProFile (folder.getChildFile ("keyminor.cho"));
-        check (bar.getSwitchKeyButton().isVisible() && bar.getNotice().contains ("F# minor"), "a minor key says so");
-        bar.getSwitchKeyButton().triggerClick();
+
+        // Keep: the question goes and the key stays
+        bar.importChordProFile (folder.getChildFile ("keyminor.cho")); // F# minor, in G Major
+        check (bar.isAskingFileKey() && bar.getQuestion() == "The song says it is in F# minor. Switch the key?", "a minor key is asked about, with its name");
+        bar.getGuessKeepButton().triggerClick();
         settle (60);
-        check (processor.keyParam->getIndex() == 6 && processor.getKey().scale == engine::ScaleId::Minor, "and switches to F# minor");
+        check (! bar.isAskingFileKey() && processor.keyParam->getIndex() == 7 && processor.getKey().scale == engine::ScaleId::Major, "Keep: the question goes and the key stays G Major");
+        bar.cancelQuickText();
+
+        // Switch to a minor key
+        bar.importChordProFile (folder.getChildFile ("keyminor.cho"));
+        bar.getGuessSwitchButton().triggerClick();
+        settle (60);
+        check (processor.keyParam->getIndex() == 6 && processor.getKey().scale == engine::ScaleId::Minor && ! bar.isAskingFileKey(), "and switches to F# minor");
         bar.cancelQuickText();
         *processor.keyParam = 0;
         *processor.scaleParam = (int) engine::ScaleId::Major;
+        settle (60);
 
         // The text can be changed, and the lock and the marks work as in any Quick-text
         bar.importChordProFile (folder.getChildFile ("key.cho")); // G Em C D in C major: D is outside the key
-        bar.getSwitchKeyButton().setVisible (false);
         bar.getTextEditor().setText ("G Em C D", false);
         bar.applyQuickText();
         settle (60);
         check (silentBlocks() == 1 && bar.getAllowButton().isVisible(), "a chord outside the key is silent with the lock on, and Allow is there");
         processor.undo();
+        settle (60);
+        check (! bar.isAskingFileKey(), "a change by hand (undo) answers the question");
+        *processor.keyParam = 0;
+        *processor.scaleParam = (int) engine::ScaleId::Major;
+        processor.setProgression (barBefore);
         settle (60);
 
         // Chords that are not chords are left out, and the others are used

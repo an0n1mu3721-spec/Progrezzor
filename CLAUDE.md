@@ -224,12 +224,16 @@ Reglen er: * betyder antal, og : betyder længde. Tekstfeltet viser altid blokke
 
 Henrik, 2026-11-08. Genbruger Quick-text.
 
-- "Import ChordPro..." i Settings åbner en filvælger (.cho, .chopro, .crd, .pro). En fil, der trækkes ind på rundgangen, virker også.
-- Kun akkorderne i firkantede parenteser læses, i rækkefølge. Teksten, kommentarer (#-linjer) og alle andre direktiver ignoreres, og \[*Coda\] er en note, ikke en akkord. Hver akkord bliver 1 takt.
-- Har filen afsnit ({start_of_verse}, {start_of_chorus}, {start_of_bridge} og {sov}, {soc}, {sob}, evt. med en etiket efter kolon), vises en liste ("Which part?", med de første akkorder), og brugeren vælger ét. Afsnit uden akkorder udelades, og afsnit der kommer flere gange nummereres (Chorus, Chorus 2). Uden afsnit bruges hele filen.
-- Resultatet vises som tekst i Quick-text-feltet i takt-notation ("| C | Am | F | G |", Henrik 2026-11-14), så brugeren kan se og rette det. Enter anvender, Esc fortryder, og rundgangen ændres først ved Enter. Alle Quick-text-regler gælder (Lock to scale, rødt for ukendte, Allow). N.C. og lignende bliver røde.
-- Har filen {key: X}, og den er en anden end plug-in'ets, står der i bunden "The song says it is in G major. Switch the key?" med en knap. Plug-in'et skifter aldrig selv. Akkorderne i teksten er navngivne, så de er de samme akkorder efter et skift.
-- Er der flere akkorder end bjælken kan rumme (32), tages de første, og en kort besked siger det. En fil uden akkorder giver en tom tekst og beskeden "No chords found in that file."
+- "Import ChordPro..." i Settings åbner en filvælger (.cho, .chopro, .crd, .pro). Der er ingen træk af en fil ind på rundgangen. Under menupunktet står to dæmpede hint-linjer: "Helper only. Reads the chords in [brackets]." og "Check the result in Quick-text before you press Enter."
+- Hele sangen læses, i den rækkefølge den står. Der er ingen liste over afsnit, og ingen spørgsmål om hvilket afsnit.
+- En parentes er en akkord, hvis indholdet begynder med store A til G og er et kendt akkordnavn (også aliaserne). [Am7], [G/B] og [Bb] læses. [e], [f#] og [d] er enkelte toner og springes over (tælles som "notes"). Notationsparenteser [-] [|] [,] [;] [:] [.] fjernes lydløst. Afsnitsnavne som [INTRO], [VERSE 2], [CHORUS] og [PRE-CHORUS] springes over, og akkorderne efter dem læses. Andre parenteser ([guitar], [fade], [N.C.], [*Coda] ...) er tekst og springes over.
+- Tekst uden for parenteser, kommentarlinjer (#) og akkordløse linjer: teksten springes over, og akkordlinjer uden tekst læses som normalt.
+- Direktiver: {title} (og {t}) og {key} læses. Alle andre direktiver springes over og tælles. Akkorder inde i {comment}, {c}, {ci}, {comment_italic}, {cb}, {comment_box} og i blokkene {start_of_comment} (eller {soc}) ... {end_of_comment} (eller {eoc}) springes over og tælles. Det samme gælder {start_of_tab} (eller {sot}) ... {end_of_tab} (eller {eot}).
+- Et capo læses ikke. Nævner filen et capo (i et direktiv eller i teksten, fx "(Capo 4)"), står der i noticen, at akkorderne er som skrevet.
+- Akkorderne kommer ind som Quick-text i takt-notation ("| C | Am | F | G |", Henrik 2026-11-14), én takt pr. akkord, så brugeren kan se og rette dem. Enter anvender, Esc fortryder, og rundgangen ændres først ved Enter. Alle Quick-text-regler gælder (Lock to scale, rødt for ukendte, Allow). N.C. og lignende bliver røde.
+- Noticen efter en vellykket import er én linje: "Read N chords. Skipped: X directives, Y notes, Z chords in comments or tabs, and some text." (plus capo-sætningen, hvis den gælder) og til sidst "Check them before you press Enter." Er der akkorder uden for skalaen, står det også i noticen, før sidste sætning.
+- Afvisning (rundgangen ændres ikke, og feltet viser rundgangen, som den er, med årsagen i noticen): filen er ikke UTF-8-tekst; filen er større end 256 KB; filen har ingen akkorder ("No chords found in that file."); filen har flere akkorder end rundgangen kan rumme (256): "This file has N chords. The bar holds 256, so the file is not imported." Præcis 256 akkorder accepteres.
+- {key: X} og en anden toneart end plug-in'ets: under noticen står "The song says it is in G major. Switch the key?" med knapperne "Switch to G Major" og "Keep C Major" (samme kort som gæt-spørgsmålet). Spørgsmålet kommer ved import og bliver stående, også efter Enter. Det fjernes først, når der trykkes Switch eller Keep, eller når rundgangen ændres med hånden (også undo). Et Quick-text-problem (fx et stavet forkert akkordnavn) skjuler det ikke, og et scale-besked vises under det. Plug-in'et skifter aldrig selv. Switch skifter tonearten én gang og flytter rundgangen med, så akkorderne er de samme akkorder.
 - Grids ({start_of_grid} ... {end_of_grid}, {sog}/{eog}) læses også: cellerne mellem taktstregerne er slag, en akkord starter en blok, `.` eller `/` lader den fortsætte, `N.C.` er en pause, `%` gentager forrige takt og `%%` de to foregående. Længden af en blok er antal celler i forhold til cellerne i en takt (shape="4x4" siger det, ellers tælles cellerne i takten). Taktstreger (|| |: :| |1 ...) skiller kun takter, gentagelser spilles ikke ud, og margener og strum-linjer springes over. Hver blok bliver et Quick-text-ord med længde (C, C:2, G:0.5).
 - Plug-in'et må aldrig levere ChordPro-filer med andres sange. Testfilerne i tests/chordpro er skrevet til projektet.
 
@@ -243,9 +247,10 @@ Henrik, 2026-11-08. Settings har under "Import and export", ved siden af Import 
 
 ## Gæt toneart
 
-Henrik, 2026-11-08. Når akkorder lægges ind med Quick-text (Enter) eller et ChordPro-import, gættes tonearten (dur eller mol). Der spørges altid; tonearten skiftes aldrig uden et ja.
+Henrik, 2026-11-08. Når akkorder lægges ind med Quick-text (Enter), gættes tonearten (dur eller mol). Der spørges altid; tonearten skiftes aldrig uden et ja.
 
-- En ChordPro-fil med {key:} bruger den (spørgsmålet "Switch key?"), og der gættes ikke.
+- En ChordPro-fil med {key:} bruger den: spørgsmålet kommer ved import (se ChordPro-import), og der gættes ikke.
+- En ChordPro-fil uden {key:} gættes ved import, ikke efter Enter: den toneart, som flest af akkorderne passer i (mindst tre ud af fire), spørges om med Switch og Keep i samme kort. Akkorder, der ikke kan læses som akkordnavne, tælles ikke med. Grundreglerne nedenfor gælder for Quick-text.
 - Ellers prøves alle 12 dur- og 12 mol-tonearter. En toneart passer, hvis alle akkorder ligger i dens skala. I mol tæller dur-akkorden på trin V (E i A Minor) også med.
 - Dur og mol-tvilling (G Major og E Minor) afgøres sådan: er første eller sidste akkord mol-tvillingens i-akkord (Em), gættes mol; er det dur-tonartens I-akkord (G), gættes dur; ellers vinder den, hvis grundakkord bruges oftest, og uafgjort er dur.
 - Passer flere forskellige tonearter: den, hvis grundakkord er første eller sidste akkord, ellers den, hvis grundakkord bruges oftest. Uafgjort giver intet gæt (fx "C G"). Passer ingen, gættes der ikke, og tonearten beholdes. Er gættet den nuværende toneart (Minor, Dorian og Phrygian tæller som mol), sker der intet.

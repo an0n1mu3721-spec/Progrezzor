@@ -234,7 +234,7 @@ private:
 };
 
 // The bottom bar: the blocks of the progression side by side
-class ProgressionBar : public juce::Component, public juce::FileDragAndDropTarget, private juce::ScrollBar::Listener
+class ProgressionBar : public juce::Component, private juce::ScrollBar::Listener
 {
 public:
     explicit ProgressionBar (ProgrezzorProcessor&);
@@ -267,7 +267,7 @@ public:
     void addRestWhileAdding();                         // Add is on and the blank pad was pressed: a pause at the end
     bool deleteSelected();
 
-    // ChordPro import (Settings > Import ChordPro..., or a file dragged onto the bar): the chords of the file become Quick-text
+    // ChordPro import (Settings > Import ChordPro...): the chords of the file become Quick-text
     // in the text field, to look at and change. The whole song is read. A key in the file is asked about, and a file without one
     // gets a guess; never used by itself. A file that cannot be read is refused and the bar stays as it is. Nothing in the bar
     // changes until Enter.
@@ -283,15 +283,15 @@ public:
     void importChordProData (const std::string& bytes);     // reads the bytes of a file and shows them
     void showChordPro();                                    // what chordPro says: the chords, or the reason it is refused
     void showKeyGuessCard (const juce::String& say);        // the question about the key, with Switch and Keep
-    BarButton& getSwitchKeyButton() { return switchKeyButton; }
+    bool isAskingFileKey() const { return fileKeyAsked; }   // the file says another key: Switch or Keep is asked
+    engine::Key getFileKey() const { return fileKey; }
+    juce::String getQuestion() const;                        // what the question card says
     bool isAskingKey() const { return askingKey; }
     engine::Key getGuessedKey() const { return guessedKey; }
     BarButton& getGuessSwitchButton() { return guessSwitchButton; }
     BarButton& getGuessKeepButton() { return guessKeepButton; }
     void acceptKeyGuess();  // Switch to the guessed key; the chords stay the same chords
     void declineKeyGuess(); // Keep the key
-    bool isInterestedInFileDrag (const juce::StringArray& files) override;
-    void filesDropped (const juce::StringArray& files, int x, int y) override;
     void applyBlockMenuChoice (int index, int result); // the numbers of the items of the block menu: 100+type, 200+inversion, 301/302 octave, 310-313 length, 320 lock, 321 duplicate, 330 delete
 
     // Dragging a chord in from a pad: where it would land
@@ -380,7 +380,6 @@ private:
     BarButton clearButton { "Clear", BarButton::Icon::None }; // empties the bar (Undo brings it back)
     BarButton quickTextButton { "Text", BarButton::Icon::Pencil };
     BarButton allowButton { "Allow", BarButton::Icon::None };
-    BarButton switchKeyButton { "Switch key", BarButton::Icon::None };
     // The guess of the key, after chords have been put in with Quick-text: a question with two buttons, never a change by itself
     bool askingKey = false;
     engine::Key guessedKey;
@@ -389,11 +388,16 @@ private:
     BarButton guessSwitchButton { "Switch", BarButton::Icon::None };
     BarButton guessKeepButton { "Keep", BarButton::Icon::None };
     void offerKeyGuess();
-    bool noticeHasSwitchKey = false;
     engine::ChordProResult chordPro;       // what the imported file said
     juce::String importedText, importNote; // the text that was put in the field, and what to say about it while it stays
     bool importRefused = false;   // the file was refused: the field shows the bar as it is
-    bool importAsksKey = false;
+    bool fileKeyAsked = false;             // the file says {key} and it is another key: the question stays until Switch or Keep
+    engine::Key fileKey;                   // the key the file says, in the plug-in's terms
+    int fileKeyAskedAtVersion = -1;        // the progression when it was asked: a change by hand ends the question
+    void acceptFileKey();
+    void declineFileKey();
+    void showFileKeyCard();
+    engine::Key fileKeyTarget() const;
     std::unique_ptr<juce::FileChooser> fileChooser;
     BarButton settingsButton { "Settings", BarButton::Icon::Gear };
     ArpToggle arpButton;

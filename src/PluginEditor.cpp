@@ -2166,35 +2166,13 @@ ProgressionBar::ProgressionBar (ProgrezzorProcessor& p) : processor (p)
     guessSwitchButton.setAccented (true);
     guessSwitchButton.setComponentID ("guess-switch");
     guessSwitchButton.setTooltip ("Change the key. The chords stay the same chords");
-    guessSwitchButton.onClick = [this] { acceptKeyGuess(); };
+    guessSwitchButton.onClick = [this] { if (fileKeyAsked) acceptFileKey(); else acceptKeyGuess(); };
     addChildComponent (guessSwitchButton);
     guessKeepButton.setVisible (false);
     guessKeepButton.setComponentID ("guess-keep");
     guessKeepButton.setTooltip ("Keep the key as it is");
-    guessKeepButton.onClick = [this] { declineKeyGuess(); };
+    guessKeepButton.onClick = [this] { if (fileKeyAsked) declineFileKey(); else declineKeyGuess(); };
     addChildComponent (guessKeepButton);
-
-    switchKeyButton.setTooltip ("Change the key to the one the song says");
-    switchKeyButton.setVisible (false);
-    switchKeyButton.setAccented (true);
-    switchKeyButton.setComponentID ("switch-key");
-    switchKeyButton.onClick = [this]
-    {
-        const int tonic = chordPro.keyTonic;
-        const bool minor = chordPro.keyMinor;
-        const auto scale = processor.getKey().scale;
-        const int scaleIndex = minor ? (scale == engine::ScaleId::Major ? (int) engine::ScaleId::Minor : (int) scale) : (int) engine::ScaleId::Major;
-        for (auto [parameter, index] : { std::pair<juce::RangedAudioParameter*, int> { processor.keyParam, tonic },
-                                         std::pair<juce::RangedAudioParameter*, int> { processor.scaleParam, scaleIndex } })
-        {
-            parameter->beginChangeGesture();
-            parameter->setValueNotifyingHost (parameter->convertTo0to1 ((float) index));
-            parameter->endChangeGesture();
-        }
-        importAsksKey = false; // the chords in the text are named, so they stay the same chords in the new key
-        updateTextFeedback();
-    };
-    addChildComponent (switchKeyButton);
 
     allowButton.setTooltip ("Turn Lock to scale off, so these chords play");
     allowButton.setVisible (false);
@@ -2212,7 +2190,7 @@ ProgressionBar::ProgressionBar (ProgrezzorProcessor& p) : processor (p)
     textEditor.setColour (juce::TextEditor::outlineColourId, theme::outline);
     textEditor.setColour (juce::TextEditor::focusedOutlineColourId, theme::accent.withAlpha (0.7f));
     textEditor.setColour (juce::CaretComponent::caretColourId, theme::accent);
-    textEditor.setTextToShowWhenEmpty ("Am F C G", theme::dimText);
+    textEditor.setTextToShowWhenEmpty ("Am F C G", theme::dimText); // an example, for when the field is empty and typed into
     textEditor.setComponentID ("quicktext-field");
     textEditor.onTextChange = [this] { updateTextFeedback(); };
     textEditor.onReturnKey = [this] { applyQuickText(); };
@@ -2293,7 +2271,6 @@ void ProgressionBar::updateVisibility()
     textEditor.setVisible (textMode);
     textMarks->setVisible (textMode);
     allowButton.setVisible (! textMode && noticeHasAllow);
-    switchKeyButton.setVisible (textMode && noticeHasSwitchKey);
 }
 
 void ProgressionBar::startQuickText()
@@ -2324,10 +2301,9 @@ void ProgressionBar::leaveTextMode()
     importedText = {};
     importNote = {};
     importRefused = false;
-    importAsksKey = false;
+    textEditor.setTextToShowWhenEmpty (juce::String ("Am F C G"), theme::dimText); // the example is back for typing
     askingKey = false;
     guessSkip = false;
-    noticeHasSwitchKey = false;
     updateNotice();
     updateVisibility();
     resized();
@@ -2342,6 +2318,7 @@ void ProgressionBar::cancelQuickText()
         return;
 
     processor.editProgression (progressionBeforeText); // if Enter used part of the text, it is undone
+    fileKeyAskedAtVersion = processor.getProgressionVersion();
     leaveTextMode();
 }
 
@@ -2359,6 +2336,7 @@ void ProgressionBar::applyQuickText()
         return;
 
     processor.replaceProgression (engine::keepingBlockState (processor.getProgression(), read.blocks));
+    fileKeyAskedAtVersion = processor.getProgressionVersion(); // Enter keeps the question about the file's key
     if (read.problems.empty())
     {
         const bool skipGuess = guessSkip; // a ChordPro file that said its key has been asked about it already
@@ -2371,6 +2349,8 @@ void ProgressionBar::applyQuickText()
 // Which key do the chords in the bar fit? If it is another one than the key now, ask: nothing is changed without a yes.
 void ProgressionBar::offerKeyGuess()
 {
+    if (fileKeyAsked)
+        return; // one question at a time: the file's key comes first
     const auto key = processor.getKey();
     std::vector<engine::GuessChord> chords;
     for (const auto& block : processor.getProgression())
@@ -2434,6 +2414,87 @@ void ProgressionBar::declineKeyGuess()
     repaint();
 }
 
+// The key the song says, in the plug-in's terms: a minor song keeps Dorian or Phrygian if that is the key now
+engine::Key ProgressionBar::fileKeyTarget() const
+{
+    const auto current = processor.getKey();
+    engine::Key target { chordPro.keyTonic, engine::ScaleId::Major };
+    if (chordPro.keyMinor)
+        target.scale = current.scale == engine::ScaleId::Major ? engine::ScaleId::Minor : current.scale;
+    return target;
+}
+
+// The question about the key the file says: Switch changes it once, Keep leaves it. Nothing else changes it.
+void ProgressionBar::showFileKeyCard()
+{
+    const auto target = juce::String (engine::keyName (fileKey)) + " " + juce::String (engine::scaleOf (fileKey.scale).name);
+    const auto now = juce::String (engine::keyName (processor.getKey())) + " " + juce::String (engine::scaleOf (processor.getKey().scale).name);
+
+    // "G", "F#": the root as the file writes it, then the kind
+    std::string root = chordPro.keyName.substr (0, 1);
+    if (chordPro.keyName.size() > 1 && (chordPro.keyName[1] == '#' || chordPro.keyName[1] == 'b'))
+        root += chordPro.keyName[1];
+    askCard->text = "The song says it is in " + juce::String (root) + (chordPro.keyMinor ? " minor" : " major") + ". Switch the key?";
+    askCard->buttonsBelow = true;
+    askCard->setVisible (true);
+    guessSwitchButton.setButtonText ("Switch to " + target);
+    guessKeepButton.setButtonText ("Keep " + now);
+    guessSwitchButton.setVisible (true);
+    guessKeepButton.setVisible (true);
+}
+
+juce::String ProgressionBar::getQuestion() const
+{
+    return askCard->text;
+}
+
+// Switch: the key changes to the song's key once, and the chords stay the same chords (the bar moves with the key, as a guess does)
+void ProgressionBar::acceptFileKey()
+{
+    if (! fileKeyAsked)
+        return;
+    const auto old = processor.getKey();
+    fileKeyAsked = false;
+
+    const int shift = old.tonic - fileKey.tonic;
+    const auto moved = [&] (engine::Progression bar)
+    {
+        for (auto& block : bar)
+            if (! block.rest)
+                block.chord.root = engine::wrap12 (block.chord.root + shift);
+        return bar;
+    };
+    auto progression = moved (processor.getProgression());
+    if (textMode)
+        progressionBeforeText = moved (progressionBeforeText);
+
+    for (auto [parameter, index] : { std::pair<juce::RangedAudioParameter*, int> { processor.keyParam, fileKey.tonic },
+                                     std::pair<juce::RangedAudioParameter*, int> { processor.scaleParam, (int) fileKey.scale } })
+    {
+        parameter->beginChangeGesture();
+        parameter->setValueNotifyingHost (parameter->convertTo0to1 ((float) index));
+        parameter->endChangeGesture();
+    }
+    processor.editProgression (progression);
+    if (textMode)
+        updateTextFeedback();
+    else
+        updateNotice();
+    resized();
+}
+
+// Keep: the question goes and the key stays
+void ProgressionBar::declineFileKey()
+{
+    fileKeyAsked = false;
+    if (textMode)
+        updateTextFeedback();
+    else
+        updateNotice();
+    resized();
+    repaint();
+}
+
 void ProgressionBar::updateTextFeedback()
 {
     const auto text = textEditor.getText().toStdString();
@@ -2460,29 +2521,20 @@ void ProgressionBar::updateTextFeedback()
     }
 
     // What was imported from a ChordPro file says its piece while the text is still the imported text
-    noticeHasSwitchKey = false;
     if (importedText.isNotEmpty() || importNote.isNotEmpty())
     {
         if (textEditor.getText() != importedText)
         {
             importNote = {};
             importRefused = false;
-            importAsksKey = false; // the text was changed: no more about the file
-            askingKey = false;     // and the question about its key
+            askingKey = false; // the guess goes with the text; the question about the file's key stays until Switch or Keep
         }
         else if (read.problems.empty())
         {
             juce::String say = importNote;
-            if (importAsksKey && engine::chordProKeyDiffers (chordPro, processor.getKey()))
-            {
-                // "G major", "F# minor": the root as the file writes it, then the kind
-                std::string root = chordPro.keyName.substr (0, 1);
-                if (chordPro.keyName.size() > 1 && (chordPro.keyName[1] == '#' || chordPro.keyName[1] == 'b'))
-                    root += chordPro.keyName[1];
-                say += juce::String (say.isEmpty() ? "" : " ") + "The song says it is in " + juce::String (root) + (chordPro.keyMinor ? " minor" : " major")
-                       + ". Switch the key?";
-                noticeHasSwitchKey = true;
-            }
+            if (read.outsideScale > 0)
+                say += " " + juce::String (read.outsideScale) + (read.outsideScale == 1 ? " chord is" : " chords are") + " not in the scale, so "
+                       + (read.outsideScale == 1 ? "it is" : "they are") + " silent.";
             // A successful import always ends with this, after anything said about the key
             if (! importRefused && say.isNotEmpty())
                 say += " Check them before you press Enter.";
@@ -2495,10 +2547,11 @@ void ProgressionBar::updateTextFeedback()
     }
     noticeHasAllow = false;
     allowButton.setVisible (false);
-    switchKeyButton.setVisible (textMode && noticeHasSwitchKey);
 
-    // A file without a key: the guess is asked about at once, after what was said about the file
-    if (askingKey)
+    // The question about the file's key, or a guess for a file without a key (asked about at once)
+    if (fileKeyAsked)
+        showFileKeyCard();
+    else if (askingKey)
         showKeyGuessCard (noticeText);
     else if (guessSwitchButton.isVisible())
     {
@@ -2516,7 +2569,9 @@ void ProgressionBar::updateNotice()
     if (textMode)
         return;
 
-    if (askingKey)
+    if (fileKeyAsked && ! askingReplace)
+        showFileKeyCard(); // the question stays, and the scale notice comes below it
+    else if (askingKey)
     {
         const auto asked = noticeText;
         showKeyGuessCard ({});
@@ -2527,9 +2582,12 @@ void ProgressionBar::updateNotice()
         }
         return;
     }
-    guessSwitchButton.setVisible (false);
-    guessKeepButton.setVisible (false);
-    askCard->buttonsBelow = false;
+    else
+    {
+        guessSwitchButton.setVisible (false);
+        guessKeepButton.setVisible (false);
+        askCard->buttonsBelow = false;
+    }
 
     if (askingReplace)
     {
@@ -2551,7 +2609,8 @@ void ProgressionBar::updateNotice()
     }
     replaceButton.setVisible (false);
     cancelReplaceButton.setVisible (false);
-    askCard->setVisible (false);
+    if (! fileKeyAsked)
+        askCard->setVisible (false);
 
     silentCount = 0;
     juce::String firstName;
@@ -2571,7 +2630,7 @@ void ProgressionBar::updateNotice()
                : (silentCount == 1 ? firstName + " is not in the scale, so it is silent."
                                    : juce::String (silentCount) + " chords are not in the scale, so they are silent.");
     allowButton.setVisible (noticeHasAllow);
-    if (noticeText != before)
+    if (noticeText != before || fileKeyAsked)
     {
         resized();
         repaint();
@@ -2852,13 +2911,20 @@ void ProgressionBar::showChordPro()
         return;
 
     importRefused = ! chordPro.refusal.empty();
+    // A refused file leaves the field showing the bar, which may be empty: the example would look like it came from the file
+    textEditor.setTextToShowWhenEmpty (importRefused ? juce::String() : juce::String ("Am F C G"), theme::dimText);
     const juce::String text = importRefused ? progressionAsText()
                                             : juce::String (engine::chordsAsQuickTextBars (chordPro.chords, engine::kMaxBlocks));
     importedText = text;
     importNote = importRefused ? juce::String (chordPro.refusal) : juce::String (engine::chordProSummary (chordPro));
-    importAsksKey = ! importRefused && engine::chordProKeyDiffers (chordPro, processor.getKey());
     guessSkip = true; // the key has been offered now: nothing is offered again after Enter
     askingKey = false;
+    fileKeyAsked = ! importRefused && chordPro.hasKey && engine::chordProKeyDiffers (chordPro, processor.getKey());
+    if (fileKeyAsked)
+    {
+        fileKey = fileKeyTarget();
+        fileKeyAskedAtVersion = processor.getProgressionVersion();
+    }
     if (! importRefused && ! chordPro.hasKey)
     {
         const auto guess = engine::chordProKeyGuess (chordPro);
@@ -2895,16 +2961,6 @@ void ProgressionBar::showKeyGuessCard (const juce::String& say)
     guessKeepButton.setVisible (true);
 }
 
-bool ProgressionBar::isInterestedInFileDrag (const juce::StringArray& files)
-{
-    return editing && files.size() == 1 && engine::isChordProFileName (files[0].toStdString());
-}
-
-void ProgressionBar::filesDropped (const juce::StringArray& files, int, int)
-{
-    if (files.size() == 1)
-        importChordProFile (juce::File (files[0]));
-}
 
 // A grey hint line in the Settings menu: a row of its own, a little shorter than a menu item, so that a hint of several lines
 // stays together. It cannot be clicked and does not close the menu.
@@ -2954,7 +3010,7 @@ void ProgressionBar::showSettingsMenu()
     menu.addCustomItem (100, std::make_unique<HintRow> ("Kept for every project. The keyboard shows where."));
     menu.addSeparator();
     menu.addSectionHeader ("Import and export");
-    menu.addItem (25, "Import ChordPro...", editing);
+    menu.addItem (25, "Import ChordPro...", editing && ! textMode); // not while a file is being looked at: Enter or Esc first
     // Hint lines under the item, dimmed like the other explanations (a menu item cannot carry a tooltip)
     menu.addCustomItem (28, std::make_unique<HintRow> ("Helper only. Reads the chords in [brackets]."));
     menu.addCustomItem (29, std::make_unique<HintRow> ("Check the result in Quick-text before you press Enter."));
@@ -3209,6 +3265,8 @@ void ProgressionBar::refresh()
         askingReplace = false; // anything that changes the bar answers the question
     if (askingKey && processor.getProgressionVersion() != guessAskedAtVersion)
         askingKey = false;
+    if (fileKeyAsked && processor.getProgressionVersion() != fileKeyAskedAtVersion)
+        fileKeyAsked = false; // the bar was changed by hand (or undone): the question is no longer about it
     const auto key = processor.getKey();
     const auto& progression = processor.getProgression();
 
@@ -3469,7 +3527,7 @@ void ProgressionBar::paint (juce::Graphics& g)
                     trayBounds, juce::Justification::centred);
     }
 
-    if (noticeText.isNotEmpty() && ! noticeBounds.isEmpty() && ! askingReplace && (! askingKey || textMode))
+    if (noticeText.isNotEmpty() && ! noticeBounds.isEmpty() && ! askingReplace && (! askingKey || textMode || fileKeyAsked))
     {
         g.setColour (noticeIsWarning ? theme::warn : theme::dimText);
         if (auto* l = dynamic_cast<theme::LookAndFeel*> (&getLookAndFeel()))
@@ -3659,11 +3717,11 @@ void ProgressionBar::resized()
 
     // A short message under the blocks or the text, when there is one (with the Allow button at its end)
     noticeBounds = {};
-    const bool noticeBelow = noticeText.isNotEmpty() && ! askingReplace && (! askingKey || textMode); // in Quick-text the notice stays with the card
-    if (askingKey)
+    const bool noticeBelow = noticeText.isNotEmpty() && ! askingReplace && (! askingKey || textMode || fileKeyAsked); // with a card, the notice stays under it
+    if ((askingKey || fileKeyAsked) && ! askingReplace)
     {
-        // The question sits low in the tray, with the text on top and the two buttons under it. In Quick-text it sits above the notice line.
-        const int centreY = textMode && noticeBelow ? trayBounds.getBottom() - 89 : trayBounds.getBottom() - 65;
+        // The question sits low in the tray, with the text on top and the two buttons under it. With a notice line it sits above that.
+        const int centreY = noticeBelow ? trayBounds.getBottom() - 89 : trayBounds.getBottom() - 65;
         const juce::Rectangle<int> card = juce::Rectangle<int> (0, 0, 520, 110).withCentre ({ trayBounds.getCentreX(), centreY }); // low in the tray, so the blocks stay in view
         askCard->setBounds (card);
         guessSwitchButton.setBounds (juce::Rectangle<int> (card.getRight() - 20 - 200, card.getBottom() - 18 - 38, 200, 38));
@@ -3688,14 +3746,14 @@ void ProgressionBar::resized()
         auto row = area.removeFromBottom (22);
         area.removeFromBottom (2);
         noticeBounds = row;
-        if (noticeHasAllow || noticeHasSwitchKey || askingReplace) // the button follows the message
+        if (noticeHasAllow || askingReplace) // the button follows the message
         {
             float textWidth = 200.0f;
             if (auto* l = dynamic_cast<theme::LookAndFeel*> (&getLookAndFeel()))
                 textWidth = (float) juce::GlyphArrangement::getStringWidthInt (l->labelFont (14.0f), noticeText);
             const int taken = std::min (row.getWidth() - 70, (int) textWidth + 12);
             noticeBounds = row.withWidth (std::max (0, taken));
-            (askingReplace ? replaceButton : (noticeHasSwitchKey ? switchKeyButton : allowButton)).setBounds (row.withTrimmedLeft (std::max (0, taken + 4)).withWidth (askingReplace ? 80 : (noticeHasSwitchKey ? 96 : 66)));
+            (askingReplace ? replaceButton : allowButton).setBounds (row.withTrimmedLeft (std::max (0, taken + 4)).withWidth (askingReplace ? 80 : 66));
         }
     }
 

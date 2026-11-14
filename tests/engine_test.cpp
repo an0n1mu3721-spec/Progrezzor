@@ -764,9 +764,6 @@ void testChordPro()
     check (! readChordPro ("{key: nonsense}\n[C]x").hasKey && readChordPro ("{key: Bb}\n[C]x").keyTonic == 10, "a key that cannot be read is ignored; Bb is 10");
     check (! readChordPro ("[C]x").hasKey && ! chordProKeyDiffers (readChordPro ("[C]x"), key), "no key in the file: no question");
 
-    // The file names
-    check (isChordProFileName ("a.cho") && isChordProFileName ("a.CHOPRO") && isChordProFileName ("b.crd") && isChordProFileName ("c.Pro")
-           && ! isChordProFileName ("a.txt") && ! isChordProFileName ("cho") && ! isChordProFileName ("a.mid"), "the file endings .cho .chopro .crd .pro");
 }
 
 void testKeyGuess()

@@ -12,6 +12,9 @@ tag the commit (`vX.Y.Z`).
 
 ## [Unreleased]
 
+### Removed
+- **A ChordPro file can no longer be dragged onto the progression bar.** Use Settings > Import ChordPro... instead.
+
 ### Fixed
 - **Quick-text understands "add" and "sus" without a number.** Gadd is read as Gadd9 and Gsus as Gsus4, so Gadd, Cadd, Gsus and Csus no longer show up red.
 - **A rest at the start or the end of the progression stays in the MIDI file in your DAW.** Some DAWs size the clip from the first note to the last, so the rest fell away. The file now has a silent MIDI controller (#119, value 0) on the first and the last tick when the progression starts or ends with a rest. It makes no sound and can be deleted in the clip.

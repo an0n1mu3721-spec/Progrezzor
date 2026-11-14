@@ -597,15 +597,6 @@ KeyGuess chordProKeyGuess(const ChordProResult& result)
     return guessKeyFromShare(chords, 0.75);
 }
 
-bool isChordProFileName(const std::string& fileName)
-{
-    const auto dot = fileName.find_last_of('.');
-    if (dot == std::string::npos)
-        return false;
-    const auto ending = lower(fileName.substr(dot + 1));
-    return ending == "cho" || ending == "chopro" || ending == "crd" || ending == "pro";
-}
-
 std::string chordsAsQuickText(const std::vector<std::string>& chords, int maxChords, bool* tooMany)
 {
     if (tooMany != nullptr)

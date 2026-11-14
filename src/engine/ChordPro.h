@@ -58,9 +58,6 @@ std::string chordProSummary(const ChordProResult&);
 // four do. Nothing when the file has a key, or is refused.
 KeyGuess chordProKeyGuess(const ChordProResult&);
 
-// True for the file name endings of ChordPro files: .cho .chopro .crd .pro (also in capitals)
-bool isChordProFileName(const std::string& fileName);
-
 // The chords as Quick-text, one bar each: "C Am F G". At most `maxChords`; `tooMany` says whether some were left out.
 std::string chordsAsQuickText(const std::vector<std::string>& chords, int maxChords, bool* tooMany = nullptr);
 
