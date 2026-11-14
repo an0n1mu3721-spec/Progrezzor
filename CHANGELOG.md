@@ -18,7 +18,7 @@ tag the commit (`vX.Y.Z`).
 - **Learn: a wrong key is shown red at once** and stays red while it is held, with a cross in the corner, so it is not mixed up with the pulsing amber edge of the chord to play.
 - **You can mark and delete a block while Add is on.** Before, a click on a block did nothing while Add was lit. Pads still add chords at the end while Add is on.
 - **The small gear on a block sits further from the edge of the block.**
-- **The Clear button is a little bigger, with more room around the word.**
+- **Tidier buttons in the progression card.** Clear now sits under Add, as wide as Add, with the pencil (Quick-text) beside it. Undo and Redo have a row of their own, and the Arp button is a little taller, with more room inside it.
 - **The three-dot button next to Arp is a little wider.**
 - **Clearer tooltips** for Quick-text (no stray % sign) and for Settings, which now says what it holds.
 

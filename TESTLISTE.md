@@ -113,10 +113,10 @@ Kræver et MIDI-tastatur.
 - [x] Settings (tandhjulet) > Help > Show tooltips: slå fra, og ingen tooltips vises. Slå til igen. Valget huskes i alle projekter.
 
 ## 2k. Quick-text med takter (branch feature/quicktext-bars)
-- [ ] Tryk på blyanten og skriv `| C | Am | F | G |`, Enter: fire blokke på 1 takt hver.
-- [ ] `| C G | Am |`: to blokke på ½ takt og én på 1 takt. `| C | % | F | / |`: C, C, F, F.
-- [ ] Indsæt et diagram over flere linjer (kopiér fra en tekst): linjeskift og mellemrum er lige meget.
-- [ ] Den gamle notation virker stadig (`Am*2 F:2`). Et ukendt ord eller en tredje akkord i en takt er rødt, og resten virker.
+- [x] Tryk på blyanten og skriv `| C | Am | F | G |`, Enter: fire blokke på 1 takt hver.
+- [x] `| C G | Am |`: to blokke på ½ takt og én på 1 takt. `| C | % | F | / |`: C, C, F, F.
+- [x] Indsæt et diagram over flere linjer (kopiér fra en tekst): linjeskift og mellemrum er lige meget.
+- [x] Den gamle notation virker stadig (`Am*2 F:2`). Et ukendt ord eller en tredje akkord i en takt er rødt, og resten virker.
 
 ## 2l. ChordPro-import (branch feature/chordpro-import)
 - [ ] Settings (tandhjulet) > Import ChordPro...: en filvælger åbner (ikke i Play). Vælg en .cho-fil: akkorderne står som tekst i Quick-text-feltet, og rundgangen er uændret.
@@ -152,7 +152,7 @@ Kræver et MIDI-tastatur.
 - [ ] Spørgsmål: skal Suggest måtte bruge farveakkorder (maj7, 9, sus2, m7), selvom de ikke findes som pads?
       (Nu bruger den kun de 7 treklange fra pads. Dreamy, Deep og Soulful bliver derfor mest forskellige i rytme.)
 - [x] De 6 preview-lyde (Pad, Strings, Keys, Organ, Stab, Pluck): brugbare og forskellige?
-- [ ] Mood og Sound huskes i projektet.
+- [x] Mood og Sound huskes i projektet.
 - [ ] Afspilning uden DAW (Play med stoppet DAW) og overtagelsen, når DAW'en starter og stopper.
 - [ ] Tænd Add og klik på en blok: den markeres (pulserende kant), og Delete sletter den. Tryk så en pad: akkorden lægges stadig bagerst, og blokken prøver ikke akkorden.
 - [ ] Quick-text med oktaver: `Am+1 F-1 C G+2:2`, derefter Enter.

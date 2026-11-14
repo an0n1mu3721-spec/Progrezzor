@@ -385,8 +385,8 @@ void ArpToggle::paintButton (juce::Graphics& g, bool isMouseOver, bool isButtonD
     // Notes climbing up, one after the other: what the arp does
     const auto ink = on ? theme::onAccent : theme::dimText.brighter (0.2f);
     g.setColour (ink);
-    const float x0 = face.getX() + face.getWidth() * 0.18f, x1 = face.getRight() - face.getWidth() * 0.18f;
-    const float yTop = face.getY() + face.getHeight() * 0.20f, yLow = face.getY() + face.getHeight() * 0.46f;
+    const float x0 = face.getX() + face.getWidth() * 0.27f, x1 = face.getRight() - face.getWidth() * 0.27f;
+    const float yTop = face.getY() + face.getHeight() * 0.24f, yLow = face.getY() + face.getHeight() * 0.42f;
     for (int i = 0; i < 4; ++i)
     {
         const float t = (float) i / 3.0f;
@@ -394,7 +394,7 @@ void ArpToggle::paintButton (juce::Graphics& g, bool isMouseOver, bool isButtonD
     }
     if (auto* l = dynamic_cast<theme::LookAndFeel*> (&getLookAndFeel()))
         g.setFont (l->titleFont (13.0f));
-    theme::drawFitted (g, "Arp", face.withTrimmedTop (face.getHeight() * 0.5f).toNearestInt(), juce::Justification::centred, 6);
+    theme::drawFitted (g, "Arp", face.withTrimmedTop (face.getHeight() * 0.5f).withTrimmedBottom (3.0f).toNearestInt(), juce::Justification::centred, 6);
 }
 
 // ---- LearnToggle ---------------------------------------------------------------------------------------------------
@@ -3540,17 +3540,18 @@ void ProgressionBar::resized()
     auto area = getLocalBounds().reduced (10, 7);
     // The buttons on both sides start at the top of the tray (under the name of the area), and stay a sensible size
     const int labelHeight = 26;
-    const int controlsHeight = std::min (area.getHeight() - labelHeight, 150);
-    auto left = area.removeFromLeft (64).withTrimmedTop (labelHeight).withHeight (controlsHeight);
+    const int controlsHeight = std::min (area.getHeight() - labelHeight, 190); // the right side has five rows
+    const int leftHeight = std::min (area.getHeight() - labelHeight, 176);
+    auto left = area.removeFromLeft (64).withTrimmedTop (labelHeight).withHeight (leftHeight);
     area.removeFromLeft (10);
     auto learnRow = left.removeFromBottom (46);
-    left.removeFromBottom (8); // Play's key has a deeper lip, so this gap is 2 more to look the same as the one above Arp
-    auto arpRow = left.removeFromBottom (36);
-    left.removeFromBottom (6);
+    left.removeFromBottom (14); // room round the Arp key (Play's key has a deeper lip, so this gap is 2 more than the one above Arp)
+    auto arpRow = left.removeFromBottom (46);
+    left.removeFromBottom (12);
     playButton.setBounds (left);
     learnButton.setBounds (learnRow);
     arpOptionsButton.setBounds (arpRow.removeFromRight (21));
-    arpRow.removeFromRight (2);
+    arpRow.removeFromRight (5);
     arpButton.setBounds (arpRow);
 
     // The right side. The group (the buttons and the Drag tile) grows with the window, and the little keyboard sits in the
@@ -3559,26 +3560,31 @@ void ProgressionBar::resized()
     auto group = area.removeFromRight (groupWidth).withTrimmedTop (labelHeight).withHeight (controlsHeight);
     area.removeFromRight (10);
     group.removeFromBottom (16); // the name "Mid C" stands in these 16 px, under the little keyboard
-    const int rowHeight = (group.getHeight() - 15) / 4;
+    const int rowHeight = (group.getHeight() - 20) / 5;
     stripBounds = group.removeFromBottom (rowHeight);
     group.removeFromBottom (5);
     auto upper = group;
     dragTile.setBounds (upper.removeFromRight (std::min (68, std::max (56, upper.getHeight()))));
     upper.removeFromRight (10);
     auto right = upper;
+    // Row 1: Add and Settings. Row 2: Clear (as wide as Add) and the pencil (as wide as Settings). Row 3: Undo and Redo.
+    const int sideWidth = (right.getWidth() - 12) / 3;
     auto addRow = right.removeFromTop (rowHeight);
-    settingsButton.setBounds (addRow.removeFromRight ((right.getWidth() - 12) / 3));
+    settingsButton.setBounds (addRow.removeFromRight (sideWidth));
     addRow.removeFromRight (6);
     addButton.setBounds (addRow);
     right.removeFromTop (5);
-    auto smallRow = right.removeFromTop (rowHeight);
-    const int smallWidth = (smallRow.getWidth() - 12) / 3;
-    undoButton.setBounds (smallRow.removeFromLeft (smallWidth));
-    smallRow.removeFromLeft (6);
-    redoButton.setBounds (smallRow.removeFromLeft (smallWidth));
-    smallRow.removeFromLeft (6);
-    quickTextButton.setBounds (smallRow);
+    auto clearRow = right.removeFromTop (rowHeight);
+    quickTextButton.setBounds (clearRow.removeFromRight (sideWidth));
+    clearRow.removeFromRight (6);
+    clearButton.setBounds (clearRow);
     right.removeFromTop (5);
+    auto undoRow = right.removeFromTop (rowHeight);
+    undoButton.setBounds (undoRow.removeFromLeft ((undoRow.getWidth() - 6) / 2));
+    undoRow.removeFromLeft (6);
+    redoButton.setBounds (undoRow);
+    right.removeFromTop (5);
+    const int smallWidth = sideWidth;
 
     // Oct- and Oct+ with the register between them
     auto octaveRow = right.removeFromTop (rowHeight);
@@ -3588,7 +3594,6 @@ void ProgressionBar::resized()
 
     // What is left in the middle is the tray the blocks sit in, with the name of the area above it
     labelBounds = area.removeFromTop (labelHeight);
-    clearButton.setBounds (juce::Rectangle<int> (labelBounds).removeFromRight (90).withSizeKeepingCentre (90, 28)); // at the end of the name's row
     trayBounds = area;
 
     // A short message under the blocks or the text, when there is one (with the Allow button at its end)
