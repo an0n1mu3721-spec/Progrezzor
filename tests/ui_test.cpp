@@ -1369,6 +1369,14 @@ int main (int argc, char** argv)
                 processor.editProgression (engine::withInserted (processor.getProgression(), n, processor.getPadChord (n % 7), n % 5 == 4 ? 8.0 : 4.0));
             settle();
             snapshot ("many_blocks");
+            // Half bars: 72 px wide, and the name fades while the mouse is over one, so that the icons are easy to see
+            processor.setProgression ({ mk (0, 2), mk (7, 2), mk (9, 4), mk (5, 2) });
+            settle();
+            bar.getBlock (1)->setForceHover (true);
+            settle (60);
+            check (bar.getBlock (0)->getWidth() == 72 && bar.getBlock (2)->getWidth() > bar.getBlock (0)->getWidth(), "a half bar is 72 px wide, a bar more");
+            snapshot ("half_bars_hover");
+            bar.getBlock (1)->setForceHover (false);
             processor.setProgression (beforeMany);
             settle();
         }

@@ -847,6 +847,11 @@ void BlockButton::paint (juce::Graphics& g)
         g.fillPath (dashed);
     }
 
+    // On a narrow block (half a bar) the icons that show on mouseover would sit on top of the name: the name and the length fade
+    // while the mouse is over, so that the icons are easy to see and to hit
+    const bool crowded = editable && hovered() && getWidth() < 104;
+    if (crowded)
+        g.beginTransparencyLayer (0.28f);
     const auto ink = theme::textOn (base);
     g.setColour (lit ? theme::onAccent : (silent ? ink.withAlpha (0.4f) : (outsideScale ? ink.withAlpha (0.65f) : (rest ? ink.withAlpha (0.75f) : ink))));
     if (auto* l = dynamic_cast<theme::LookAndFeel*> (&getLookAndFeel()))
@@ -917,6 +922,9 @@ void BlockButton::paint (juce::Graphics& g)
             x += part.width + 10.0f;
         }
     }
+
+    if (crowded)
+        g.endTransparencyLayer();
 
     if (silent) // crossed out: it keeps its place and its time, but makes no sound
     {
@@ -3611,7 +3619,7 @@ void ProgressionBar::resized()
     }
 
     const int gap = 6;
-    const int minBlock = 56;
+    const int minBlock = 72; // half a bar (62 px at the usual scale) gets 10 px more, so that the icons on it have room
     const int maxRowHeight = 76;
 
     const auto& progression = processor.getProgression();
@@ -3851,7 +3859,7 @@ ProgrezzorEditor::ProgrezzorEditor (ProgrezzorProcessor& p)
     setWantsKeyboardFocus (true);
     setResizable (true, true);
     setResizeLimits (940, 400, 1800, 900);
-    setSize (1000, 560);
+    setSize (1100, 560); // wider than before, so that more blocks fit in a row
     startTimerHz (30);
 }
 

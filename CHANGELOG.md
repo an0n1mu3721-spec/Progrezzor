@@ -10,6 +10,12 @@ tag the commit (`vX.Y.Z`).
 
 0.9.x were internal test builds and were never released. Everything since 0.1.0 is listed under 1.0.0.
 
+## [Unreleased]
+
+### Changed
+- **Half-bar blocks are 10 px wider,** and while the mouse is over one, its name and length fade so that the lock, gear and arrows are easy to see and hit.
+- **The window opens a little wider (1100 px),** so that more blocks fit in a row.
+
 ## [1.0.0] – 2026-11-10
 
 The first public version. Linux and Windows, as CLAP and VST3 (macOS is not part of it).
