@@ -171,6 +171,7 @@ public:
     void setLength (double beats, double barBeats); // shown small on the block: 1 bar, 1/2 bar, 2 bars
     static juce::String lengthText (double beats, double barBeats);
     void setDropTarget (bool nowTarget);
+    void setLearnWrongHeld (bool nowWrong); // Learn: the keys held now are not the chord (red for as long as they are held)
     void setLearn (bool nowDone, bool nowTarget); // Learn: this block has been played / is the one to play now
     void flashWrong();                            // Learn: a wrong try on this block (a red edge for a moment) // a chord from a pad is held over it and would replace it
     void setLocked (bool nowLocked);
@@ -196,7 +197,7 @@ private:
     enum class Mode { None, Press, Resize, Move };
 
     juce::Rectangle<int> lockArea() const { return { 2, 2, 26, 26 }; }
-    juce::Rectangle<int> gearArea() const { return { 2, getHeight() - 28, 26, 26 }; }
+    juce::Rectangle<int> gearArea() const { return { 2, getHeight() - 37, 26, 26 }; } // well up from the lip at the bottom of the key
     // The two arrows lie over each other (up above, down below) just inside the right edge, which is for the length
     // The two small arrows for the octave of this block: one in the top right corner, one in the bottom right corner. They are
     // small, so that a click on the chord itself never hits them.
@@ -211,7 +212,7 @@ private:
     bool selected = false;
     bool trial = false; // another chord is being tried on this block (dashed edge)
     bool dropTarget = false;
-    bool learnDone = false, learnTarget = false;
+    bool learnDone = false, learnTarget = false, learnWrongHeld = false;
     juce::uint32 wrongUntil = 0;
     bool forceHover = false;
     bool hovered() const { return forceHover || isMouseOver(); }
@@ -335,6 +336,7 @@ public:
     juce::Rectangle<int> getTrayBounds() const { return trayBounds; }
     ArpToggle& getArpButton() { return arpButton; }
     LearnToggle& getLearnButton() { return learnButton; }
+    void setLearnMismatch (bool wrong);
     int getLearnTarget() const { return learnActive ? learnTarget : -2; } // -1: all played, -2: not learning
 
     // Learn mode, from the editor: which block is next and which are done, with the notes of the next chord for the keyboard

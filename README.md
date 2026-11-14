@@ -47,7 +47,7 @@ Version 1.0.0. Free and open source (GNU AGPLv3). CLAP and VST3 for Linux and Wi
   keeping the hand in one place. "Bass note" adds one low root note under every chord.
 - **Preview sound.** Built-in sounds (Soft Pad, Piano, Strings, Keys, Organ, Stab, Pluck) let you hear what you play with no
   other synth. Choose **Off** when another synth plays the MIDI.
-- **MIDI export.** Drag the MIDI tile into your DAW, or use Save MIDI and Open Folder. The file has exactly the notes you hear.
+- **MIDI export.** Drag the MIDI tile into your DAW, or use Save MIDI and Open Folder. The file has exactly the notes you hear. If the progression starts or ends with a rest, the file also has a silent MIDI controller (#119, value 0) at the first and the last tick, so that your DAW keeps the rest in the clip. It makes no sound, and you can delete it.
 
 ## Good to know
 

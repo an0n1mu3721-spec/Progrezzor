@@ -10,6 +10,17 @@ tag the commit (`vX.Y.Z`).
 
 0.9.x were internal test builds and were never released. Everything since 0.1.0 is listed under 1.0.0.
 
+## [Unreleased]
+
+### Fixed
+- **Quick-text understands "add" and "sus" without a number.** Gadd is read as Gadd9 and Gsus as Gsus4, so Gadd, Cadd, Gsus and Csus no longer show up red.
+- **A rest at the start or the end of the progression stays in the MIDI file in your DAW.** Some DAWs size the clip from the first note to the last, so the rest fell away. The file now has a silent MIDI controller (#119, value 0) on the first and the last tick when the progression starts or ends with a rest. It makes no sound and can be deleted in the clip.
+- **Learn: a wrong key is shown red at once** and stays red while it is held, with a cross in the corner, so it is not mixed up with the pulsing amber edge of the chord to play.
+- **The small gear on a block sits further from the edge of the block.**
+- **The Clear button is a little bigger, with more room around the word.**
+- **The three-dot button next to Arp is a little wider.**
+- **Clearer tooltips** for Quick-text (no stray % sign) and for Settings, which now says what it holds.
+
 ## [1.0.0] – 2026-11-10
 
 The first public version. Linux and Windows, as CLAP and VST3 (macOS is not part of it).

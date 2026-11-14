@@ -1278,6 +1278,23 @@ juce::File ProgrezzorProcessor::saveMidi()
         sequence.addEvent (juce::MidiMessage::noteOn (1, note.note, (juce::uint8) note.velocity).withTimeStamp (ticks (note.start)));
         sequence.addEvent (juce::MidiMessage::noteOff (1, note.note).withTimeStamp (ticks (note.start + note.length)));
     }
+    // Some DAWs size the clip from the first note to the last, and ignore the end of the track. A rest at the start or at the end
+    // then falls away. A silent controller message (a controller with no meaning, value 0) on the first and on the last tick
+    // gives them something to measure from. It makes no sound, and it is only added where a rest is at the ends.
+    {
+        const double total = engine::totalBeats (progression);
+        double firstStart = total, lastEnd = 0.0;
+        for (const auto& e : sequence)
+        {
+            firstStart = std::min (firstStart, e->message.getTimeStamp() / kTicksPerQuarter);
+            lastEnd = std::max (lastEnd, e->message.getTimeStamp() / kTicksPerQuarter);
+        }
+        constexpr int kSilentController = 119;
+        if (firstStart > 1.0e-6)
+            sequence.addEvent (juce::MidiMessage::controllerEvent (1, kSilentController, 0).withTimeStamp (0.0));
+        if (lastEnd < total - 1.0e-6)
+            sequence.addEvent (juce::MidiMessage::controllerEvent (1, kSilentController, 0).withTimeStamp (ticks (total)));
+    }
     sequence.addEvent (juce::MidiMessage::endOfTrack().withTimeStamp (ticks (engine::totalBeats (progression))));
     sequence.sort();
     sequence.updateMatchedPairs();

@@ -263,6 +263,7 @@ Henrik, 2026-11-08. Når akkorder lægges ind med Quick-text (Enter) eller et Ch
 - Gem altid i en fast, synlig mappe. Slet ikke filen efter træk, for DAW'en kan læse den senere.
 - Byg en ny MidiFile for hver eksport.
 - Filnavn indeholder akkorderne, fx Am-F-C-G.mid.
+- Pause først eller sidst (Henrik, 2026-11-14): Bitwig måler klippet fra første til sidste node og ignorerer slutmarkeringen, så pausen faldt væk. Derfor ligger en stum controller (nr. 119, værdi 0, kanal 1) på første og sidste tick, men kun når rundgangen starter eller slutter med en pause. Ellers har filen kun noter. Henrik valgte den løsning, selvom controlleren følger med ind i klippet.
 - Træk-og-slip bruges, hvor det virker. Knapperne Save MIDI og Open Folder findes på alle platforme.
 - Filen skal bekræftes importeret korrekt i Bitwig, REAPER og Ableton Live.
 

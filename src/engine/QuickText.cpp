@@ -69,6 +69,7 @@ bool readType (const std::string& suffix, ChordType& type)
 
     static const struct { const char* text; ChordType type; } alternatives[] = {
         { "maj", ChordType::Major }, { "min", ChordType::Minor }, { "min7", ChordType::Min7 }, { "min9", ChordType::Min9 },
+        { "add", ChordType::Add9 }, { "sus", ChordType::Sus4 },
     };
     for (const auto& a : alternatives)
         if (suffix == a.text)

@@ -672,12 +672,21 @@ void BlockButton::setLearn (bool nowDone, bool nowTarget)
     }
 }
 
+void BlockButton::setLearnWrongHeld (bool nowWrong)
+{
+    if (nowWrong != learnWrongHeld)
+    {
+        learnWrongHeld = nowWrong;
+        repaint();
+    }
+}
+
 void BlockButton::flashWrong()
 {
-    wrongUntil = juce::Time::getMillisecondCounter() + 500;
+    wrongUntil = juce::Time::getMillisecondCounter() + 800;
     repaint();
     juce::Component::SafePointer<BlockButton> safe (this);
-    juce::Timer::callAfterDelay (530, [safe] { if (safe != nullptr) safe->repaint(); });
+    juce::Timer::callAfterDelay (830, [safe] { if (safe != nullptr) safe->repaint(); });
 }
 
 void BlockButton::setDropTarget (bool nowTarget)
@@ -785,10 +794,19 @@ void BlockButton::paint (juce::Graphics& g)
         g.setColour (theme::shade.withAlpha (0.45f));
         g.drawEllipse (light, 1.0f);
     }
-    if (juce::Time::getMillisecondCounter() < wrongUntil) // Learn: that was not it
+    if (learnWrongHeld || juce::Time::getMillisecondCounter() < wrongUntil) // Learn: that is not it
     {
-        g.setColour (theme::warn);
+        // A clear red, different from the amber pulse of the chord to play: the whole key tinted, a thick outline and a cross
+        const auto red = juce::Colour (0xffe5233a);
+        g.setColour (red.withAlpha (0.45f));
+        g.fillRoundedRectangle (body, 9.0f);
+        g.setColour (red);
         g.drawRoundedRectangle (body.expanded (0.5f), 9.5f, 5.0f);
+        const auto c = juce::Point<float> (bounds.getRight() - 14.0f, bounds.getY() + 14.0f);
+        g.fillEllipse (juce::Rectangle<float> (18.0f, 18.0f).withCentre (c));
+        g.setColour (juce::Colours::white);
+        g.drawLine (c.x - 4.0f, c.y - 4.0f, c.x + 4.0f, c.y + 4.0f, 2.2f);
+        g.drawLine (c.x - 4.0f, c.y + 4.0f, c.x + 4.0f, c.y - 4.0f, 2.2f);
     }
     else if (learnTarget) // Learn: this is the chord to play now
     {
@@ -2009,6 +2027,12 @@ void ProgressionBar::setLearn (bool active, int target, const std::vector<bool>&
     repaint (labelBounds.withWidth (getWidth()));
 }
 
+void ProgressionBar::setLearnMismatch (bool wrong)
+{
+    for (int i = 0; i < blocks.size(); ++i)
+        blocks[i]->setLearnWrongHeld (wrong && i == learnTarget);
+}
+
 void ProgressionBar::flashLearnWrong()
 {
     if (learnTarget >= 0 && learnTarget < blocks.size())
@@ -2074,7 +2098,7 @@ ProgressionBar::ProgressionBar (ProgrezzorProcessor& p) : processor (p)
     playButton.setTooltip ("Play the progression on its own clock.");
     addAndMakeVisible (playButton);
 
-    settingsButton.setTooltip ("Settings: where the chords usually sit (kept for every project)");
+    settingsButton.setTooltip ("Settings: sound, keyboard, import and export, and more");
     settingsButton.setComponentID ("settings");
     settingsButton.onClick = [this] { showSettingsMenu(); };
     addAndMakeVisible (settingsButton);
@@ -2107,7 +2131,7 @@ ProgressionBar::ProgressionBar (ProgrezzorProcessor& p) : processor (p)
     cancelReplaceButton.onClick = [this] { cancelAsk(); };
     addChildComponent (cancelReplaceButton);
 
-    quickTextButton.setTooltip ("Type the chords, like Am F C G:2, or a chart like | Am | F | C G | %. Enter uses it, Esc cancels");
+    quickTextButton.setTooltip ("Type the chords, like Am F C G:2, or a chart like | Am | F | C G |. Enter uses it, Esc cancels");
     quickTextButton.setVisible (false);
     quickTextButton.onClick = [this] { startQuickText(); };
     quickTextButton.setComponentID ("quicktext");
@@ -3510,7 +3534,7 @@ void ProgressionBar::resized()
     left.removeFromBottom (6);
     playButton.setBounds (left);
     learnButton.setBounds (learnRow);
-    arpOptionsButton.setBounds (arpRow.removeFromRight (16));
+    arpOptionsButton.setBounds (arpRow.removeFromRight (21));
     arpRow.removeFromRight (2);
     arpButton.setBounds (arpRow);
 
@@ -3549,7 +3573,7 @@ void ProgressionBar::resized()
 
     // What is left in the middle is the tray the blocks sit in, with the name of the area above it
     labelBounds = area.removeFromTop (labelHeight);
-    clearButton.setBounds (juce::Rectangle<int> (labelBounds).removeFromRight (74).withSizeKeepingCentre (74, 24)); // at the end of the name's row
+    clearButton.setBounds (juce::Rectangle<int> (labelBounds).removeFromRight (90).withSizeKeepingCentre (90, 28)); // at the end of the name's row
     trayBounds = area;
 
     // A short message under the blocks or the text, when there is one (with the Allow button at its end)
@@ -4201,6 +4225,7 @@ void ProgrezzorEditor::updateLearning()
     if (! on)
     {
         bar.setLearn (false, -1, {}, {}, {}, false, 0);
+        bar.setLearnMismatch (false);
         return;
     }
 
@@ -4236,6 +4261,7 @@ void ProgrezzorEditor::updateLearning()
             notes.push_back (voicing.notes[(size_t) i]);
     }
     bar.setLearn (true, target, done, notes, heldNotes, hint, learn.blockCount());
+    bar.setLearnMismatch (learn.mismatching());
 
     if (target >= 0)
         bar.repaint(); // the target pulses: keep it moving

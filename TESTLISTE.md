@@ -36,82 +36,81 @@ retter de gamle linjer om mulighed A og B. Branchen merges ikke før du siger de
 
 - [x] Arp-knappen (nederst til venstre i bjælken, under Play): tænder og slukker. Slået fra er alt som før.
 - [x] Arp tændt: pads spilles én tone ad gangen, op gennem akkorden. Slip pad'en: arpen stopper straks.
-- [ ] MIDI-tastaturet spiller arp. Klik på en blok spiller arp.
-- [ ] Arp tændt, MIDI-tastatur: spil en tangent, slip den, spil den næste tangent. Du hører kun én tone i starten af hver akkord.
+- [x] MIDI-tastaturet spiller arp. Klik på en blok spiller arp.
 - [x] Rundgangen (Play): hver akkord spiller sin arp og starter forfra ved hver ny blok.
-- [ ] Drag/Save MIDI med Arp tændt: filen har arpens toner (filnavn med "-Arp"), og den lyder som du hørte den.
-- [ ] Slå Arp fra midt i afspilning: ingen hængende noter. Stop DAW'en: ingen hængende noter.
-- [ ] Panelet (de tre prikker ved Arp-knappen): Pattern, Speed, rytme-ringen (træk i ringen), forvalgene, Notes/Steps, 1 eller 2 oktaver. Er det til at forstå uden tekst?
-- [ ] Tempoændringer i DAW'en mens arpen spiller.
-- [ ] Preview-lyden ved korte arp-noter: er lyden brugbar, eller skal Pad-lyden have hurtigere anslag?
+- [x] Drag/Save MIDI med Arp tændt: filen har arpens toner (filnavn med "-Arp"), og den lyder som du hørte den.
+- [x] Slå Arp fra midt i afspilning: ingen hængende noter. Stop DAW'en: ingen hængende noter.
+- [x] Panelet (de tre prikker ved Arp-knappen): Pattern, Speed, rytme-ringen (træk i ringen), forvalgene, Notes/Steps, 1 eller 2 oktaver. Er det til at forstå uden tekst?
+- [x] Tempoændringer i DAW'en mens arpen spiller.
+- [x] Preview-lyden ved korte arp-noter: er lyden brugbar, eller skal Pad-lyden have hurtigere anslag?
 
 ## 2c. Romertal og klaviaturet (2026-11-07)
 
-- [ ] Padsene og blokkene viser romertal (I, ii, III ...). Er de til at læse, og er de i vejen? Prøv også en anden toneart og skala (C Major: I ii iii IV V vi vii°).
-- [ ] Den lille klaviatur i højre panel: det lyse felt flytter sig, når du trykker Oct+/Oct-.
-- [ ] Tonerne, der spiller, lyser grønt på klaviaturet (akkorder og arp).
+- [x] Padsene og blokkene viser romertal (I, ii, III ...). Er de til at læse, og er de i vejen? Prøv også en anden toneart og skala (C Major: I ii iii IV V vi vii°).
+- [x] Den lille klaviatur i højre panel: det lyse felt flytter sig, når du trykker Oct+/Oct-.
+- [x] Tonerne, der spiller, lyser grønt på klaviaturet (akkorder og arp).
 
 ## 2d. Midt-C og Settings (2026-11-07)
 
-- [ ] Klaviaturet har en blå streg med "Mid C", som står samme sted, uanset hvad du sætter Oct til. Det orange felt flytter sig i forhold til den.
-- [ ] Tandhjulet (Settings) i højre panel: vælg, hvor akkorderne som regel ligger (2 oktaver lavere til 2 højere end omkring midt-C).
-- [ ] Settings huskes, når du lukker og åbner DAW'en, og er ens i alle projekter. (Filen ligger i ~/.config/Progrezzor/settings.xml.)
-- [ ] Oct-knapperne tæller oven i Settings, og MIDI-filen har de samme toner, som du hører.
+- [x] Klaviaturet har en blå streg med "Mid C", som står samme sted, uanset hvad du sætter Oct til. Det orange felt flytter sig i forhold til den.
+- [x] Tandhjulet (Settings) i højre panel: vælg, hvor akkorderne som regel ligger (2 oktaver lavere til 2 højere end omkring midt-C).
+- [x] Settings huskes, når du lukker og åbner DAW'en, og er ens i alle projekter. (Filen ligger i ~/.config/Progrezzor/settings.xml.)
+- [x] Oct-knapperne tæller oven i Settings, og MIDI-filen har de samme toner, som du hører.
 
 ## 2e. Learn (branch feature/learn-mode)
 
 Kræver et MIDI-tastatur.
 
-- [ ] Learn-knappen (nederst til venstre, under Arp): tænd den med en rundgang i bjælken (fx fra Suggest). Den første blok pulserer, og overskriften siger "Play C on your keyboard (1 of 4)".
-- [ ] Hold tonerne i akkorden nede på tastaturet (fx C, E og G): blokken får et grønt mærke, og næste pulserer. Prøv en anden oktav og en anden rækkefølge. Det skal også være rigtigt.
-- [ ] Slip tangenterne før næste akkord. Hold du dem, tæller de ikke for den næste.
-- [ ] Spil en forkert akkord og hold den lidt: blokken får en rød kant. Slip tangenterne uden at have ramt: også et forkert forsøg.
-- [ ] Efter to fejl kommer et klaviaturudsnit med de rigtige taster lyserøde og nodenavne. Dine egne taster lyser grønne (rigtige) eller blå (forkerte).
-- [ ] Settings > "Show hints from the start": udsnittet er der fra første forsøg.
+- [x] Learn-knappen (nederst til venstre, under Arp): tænd den med en rundgang i bjælken (fx fra Suggest). Den første blok pulserer, og overskriften siger "Play C on your keyboard (1 of 4)".
+- [x] Hold tonerne i akkorden nede på tastaturet (fx C, E og G): blokken får et grønt mærke, og næste pulserer. Prøv en anden oktav og en anden rækkefølge. Det skal også være rigtigt.
+- [x] Slip tangenterne før næste akkord. Hold du dem, tæller de ikke for den næste.
+- [x] Spil en forkert akkord og hold den lidt: blokken får en rød kant. Slip tangenterne uden at have ramt: også et forkert forsøg.
+- [?] Efter to fejl kommer et klaviaturudsnit med de rigtige taster lyserøde og nodenavne. Dine egne taster lyser grønne (rigtige) eller blå (forkerte).
+- [x] Settings > "Show hints from the start": udsnittet er der fra første forsøg.
 - [ ] Klik på en pad i Learn: det tæller ikke, men den lyder.
 - [ ] Du hører de toner, du spiller, og de sendes ud som MIDI.
-- [ ] Når alle er spillet: "All done!". Tryk Learn igen for at starte forfra. Slå Learn fra: tangenterne er pads igen.
-- [ ] Er klaviaturudsnittet stort og tydeligt nok? Skal det kunne spilles med musen, hvis man ikke har et tastatur?
+- [x] Når alle er spillet: "All done!". Tryk Learn igen for at starte forfra. Slå Learn fra: tangenterne er pads igen.
+- [x] Er klaviaturudsnittet stort og tydeligt nok? Skal det kunne spilles med musen, hvis man ikke har et tastatur?
 
 ## 2f. Omvendinger i Suggest (branch feature/suggest-inversions)
-- [ ] Vælg Bright, C Major, og tryk Suggest mange gange. Nogle rundgange har en blok med skråstreg, fx G/B. Spil dem: bassen skal gå trinvis (C, B, A, F).
-- [ ] Padsene er uændrede (ingen skråstreg på dem).
-- [ ] Settings (tandhjulet): "Inversions in suggestions" er sat som standard. Slå den fra og tryk Suggest mange gange: aldrig en skråstreg. Luk og åbn projektet igen: valget er husket.
-- [ ] Ændr en pad til en variant (fx G til G7), tryk Suggest: blokken med G bliver G7, ikke G/B.
+- [x] Vælg Bright, C Major, og tryk Suggest mange gange. Nogle rundgange har en blok med skråstreg, fx G/B. Spil dem: bassen skal gå trinvis (C, B, A, F).
+- [x] Padsene er uændrede (ingen skråstreg på dem).
+- [x] Settings (tandhjulet): "Inversions in suggestions" er sat som standard. Slå den fra og tryk Suggest mange gange: aldrig en skråstreg. Luk og åbn projektet igen: valget er husket.
+- [x] Ændr en pad til en variant (fx G til G7), tryk Suggest: blokken med G bliver G7, ikke G/B.
 - [ ] Træk MIDI ud: tonerne er de samme som dem, du hører, også for G/B (B er den dybeste tone).
 
 ## 2g. Bastone (branch feature/bass-note)
-- [ ] Settings (tandhjulet): "Bass note" er slukket som standard. Tænd den og klik på pad 1 til 7: en dyb tone kommer under hver akkord (grundtonen), og akkorden er den samme som før.
-- [ ] Skift til en blok med omvending (fx G/B): bastonen er B, den dybeste tone.
-- [ ] Spil rundgangen med Bass note og Arp tændt: bastonen ligger som én lang tone under arpeggioen og skifter ved hver blok.
-- [ ] Træk MIDI ud: bastonen er med, og lyden svarer til filen. Slå den fra: filen har kun akkorderne.
-- [ ] Gem projektet med den tændt, åbn det igen: den er stadig tændt. Et nyt projekt har den slukket.
-- [ ] Ingen hængende noter, når du slipper en pad, stopper transporten eller slår Bass note fra.
+- [x] Settings (tandhjulet): "Bass note" er slukket som standard. Tænd den og klik på pad 1 til 7: en dyb tone kommer under hver akkord (grundtonen), og akkorden er den samme som før.
+- [x] Skift til en blok med omvending (fx G/B): bastonen er B, den dybeste tone.
+- [x] Spil rundgangen med Bass note og Arp tændt: bastonen ligger som én lang tone under arpeggioen og skifter ved hver blok.
+- [x] Træk MIDI ud: bastonen er med, og lyden svarer til filen. Slå den fra: filen har kun akkorderne.
+- [x] Gem projektet med den tændt, åbn det igen: den er stadig tændt. Et nyt projekt har den slukket.
+- [x] Ingen hængende noter, når du slipper en pad, stopper transporten eller slår Bass note fra.
 
 ## 2h. Blokmenu (branch feature/edit-blocks)
-- [ ] Højreklik på en blok: en menu åbner (ingen sletning). Den har akkordtyper, omvendinger, Octave up/down, længde, Lock, Duplicate og nederst Delete.
+- [x] Højreklik på en blok: en menu åbner (ingen sletning). Den har akkordtyper, omvendinger, Octave up/down, længde, Lock, Duplicate og nederst Delete.
 - [ ] Hold musen over en blok: et lille ⚙️ vises nederst til venstre og åbner den samme menu.
-- [ ] Skift type, omvending, oktav og længde: kun den ene blok ændres, pad'en gør ikke. Slå Lock to scale til: kun passende typer vises.
-- [ ] Fortryd (Ctrl+Z) tager hver ændring tilbage, en ad gangen.
-- [ ] Delete-tasten sletter stadig en markeret blok.
-- [ ] Højreklik på en pause: kun længde, Duplicate og Delete.
-- [ ] I Play kan intet ændres, og der er ingen menu.
-- [ ] Træk MIDI ud: filen har blokkens type, omvending, oktav og længde.
+- [x] Skift type, omvending, oktav og længde: kun den ene blok ændres, pad'en gør ikke. Slå Lock to scale til: kun passende typer vises.
+- [x] Fortryd (Ctrl+Z) tager hver ændring tilbage, en ad gangen.
+- [x] Delete-tasten sletter stadig en markeret blok.
+- [x] Højreklik på en pause: kun længde, Duplicate og Delete.
+- [?] I Play kan intet ændres, og der er ingen menu.
+- [x] Træk MIDI ud: filen har blokkens type, omvending, oktav og længde.
 
 ## 2i. Akkord-rytme (branch feature/chord-rhythm)
-- [ ] Åbn arp-panelet (de tre prikker ved Arp). Øverst er en kontakt Hold | Arp | Rhythm. Hold: akkorden som én lang tone. Arp: som før.
-- [ ] Vælg Rhythm: tolv mønstre vises som små rækker af prikker. Klik på dem og lyt: hele akkorden slås an i mønstret.
-- [ ] Prøv Speed 1/8 og 1/16, og Length Short, Medium og Long.
-- [ ] Euclid: Hits og Turn dukker op. Mønstret i bunden af panelet viser, hvad der spiller.
-- [ ] Spil en rundgang med Rhythm: mønstret starter forfra i hver blok og holder takten, også ved andre tempi og når du hopper i tid. Første slag i takten er lidt kraftigere.
-- [ ] Slå Bass note til: bastonen ligger som én lang tone under rytmen.
-- [ ] Hold en pad uden loop: mønstret starter ved tryk. Slip: intet hænger.
-- [ ] Træk MIDI ud: slagene er de samme som lyden (filnavn med -Rhythm). Gem og åbn projektet: valgene er der stadig.
+- [x] Åbn arp-panelet (de tre prikker ved Arp). Øverst er en kontakt Hold | Arp | Rhythm. Hold: akkorden som én lang tone. Arp: som før.
+- [x] Vælg Rhythm: tolv mønstre vises som små rækker af prikker. Klik på dem og lyt: hele akkorden slås an i mønstret.
+- [x] Prøv Speed 1/8 og 1/16, og Length Short, Medium og Long.
+- [x] Euclid: Hits og Turn dukker op. Mønstret i bunden af panelet viser, hvad der spiller.
+- [x] Spil en rundgang med Rhythm: mønstret starter forfra i hver blok og holder takten, også ved andre tempi og når du hopper i tid. Første slag i takten er lidt kraftigere.
+- [x] Slå Bass note til: bastonen ligger som én lang tone under rytmen.
+- [x] Hold en pad uden loop: mønstret starter ved tryk. Slip: intet hænger.
+- [x] Træk MIDI ud: slagene er de samme som lyden (filnavn med -Rhythm). Gem og åbn projektet: valgene er der stadig.
 
 ## 2j. Tekst og tooltips (branch fix/text-padding)
-- [ ] Gå over alle knapper (topbjælken, Add, Arp, Learn, Drag, arp-panelet med Short/Medium/Long og mønsternavne, blokke): teksten har luft til kanten overalt.
-- [ ] Hold musen over en knap: tooltip'en er smal, har flere linier og står tydeligt forskudt fra musen.
-- [ ] Settings (tandhjulet) > Help > Show tooltips: slå fra, og ingen tooltips vises. Slå til igen. Valget huskes i alle projekter.
+- [x] Gå over alle knapper (topbjælken, Add, Arp, Learn, Drag, arp-panelet med Short/Medium/Long og mønsternavne, blokke): teksten har luft til kanten overalt.
+- [x] Hold musen over en knap: tooltip'en er smal, har flere linier og står tydeligt forskudt fra musen.
+- [x] Settings (tandhjulet) > Help > Show tooltips: slå fra, og ingen tooltips vises. Slå til igen. Valget huskes i alle projekter.
 
 ## 2k. Quick-text med takter (branch feature/quicktext-bars)
 - [ ] Tryk på blyanten og skriv `| C | Am | F | G |`, Enter: fire blokke på 1 takt hver.
@@ -129,33 +128,34 @@ Kræver et MIDI-tastatur.
 - [ ] En lang fil: de første 32 akkorder, og en besked om det.
 
 ## 2m. Gæt toneart (branch feature/guess-key)
-- [ ] Stå i C Major, tryk på blyanten, skriv `G D C Em Am`, Enter: et kort spørger "These chords fit G Major." med "Switch to G Major" og "Keep C Major". Tonearten er uændret, til du trykker.
-- [ ] Switch: tonearten skifter, og akkorderne er stadig G D C Em Am (ikke flyttet). Keep: alt er som før.
-- [ ] `Am F C G` giver A Minor, `Am Dm E Am` giver A Minor, `C F G` giver C Major. En rundgang med en lånt akkord, der ikke passer, giver intet spørgsmål.
-- [ ] Står du allerede i den toneart, sker der ingenting.
+- [x] Stå i C Major, tryk på blyanten, skriv `G D C Em Am`, Enter: et kort spørger "These chords fit G Major." med "Switch to G Major" og "Keep C Major". Tonearten er uændret, til du trykker.
+- [?] Switch: tonearten skifter, og akkorderne er stadig G D C Em Am (ikke flyttet). Keep: alt er som før.
+- [x] `Am F C G` giver A Minor, `Am Dm E Am` giver A Minor, `C F G` giver C Major. En rundgang med en lånt akkord, der ikke passer, giver intet spørgsmål.
+- [x] Står du allerede i den toneart, sker der ingenting.
 - [ ] ChordPro-fil med {key:}: ingen gætning. Uden {key:}: gættet kommer, når du trykker Enter.
 
 ## 2n. Eksport som tekst (branch feature/text-export)
-- [ ] Settings > Copy as text: indsæt et sted (fx i en tekst): `| C | Am | F G | G |`. Åbn Quick-text, indsæt det, Enter: samme rundgang.
-- [ ] Settings > Save ChordPro...: gem en .cho-fil og åbn den i en teksteditor: titel, toneart og et grid med slag. Import ChordPro igen: samme rundgang (halve takter, omvendinger og pauser).
-- [ ] Begge punkter er slukket, når bjælken er tom.
+- [x] Settings > Copy as text: indsæt et sted (fx i en tekst): `| C | Am | F G | G |`. Åbn Quick-text, indsæt det, Enter: samme rundgang.
+- [x] Settings > Save ChordPro...: gem en .cho-fil og åbn den i en teksteditor: titel, toneart og et grid med slag. Import ChordPro igen: samme rundgang (halve takter, omvendinger og pauser).
+- [x] Begge punkter er slukket, når bjælken er tom.
 
 ## 2o. Keyboard: Chord roots (branch feature/keyboard-chord-roots)
-- [ ] Settings > Keyboard: "White keys" er valgt som standard og virker som før.
-- [ ] Vælg "Chord roots". I C Major spiller de hvide tangenter pad 1 til 7, og de sorte spiller ingenting.
-- [ ] Skift til D Minor: D E F G A spiller pad 1 til 5, den sorte tangent Bb spiller pad 6, C spiller pad 7. C#, Eb, F#, Ab og B spiller ingenting.
-- [ ] Prøv en toneart med sorte tangenter på padsene (fx Eb Major): Eb, Ab og Bb spiller hver sin pad.
-- [ ] Hold en tangent og skift toneart: når du slipper, hænger der ingen note. Gem og åbn projektet: valget er husket.
+- [x] Settings > Keyboard: "White keys" er valgt som standard og virker som før.
+- [x] Vælg "Chord roots". I C Major spiller de hvide tangenter pad 1 til 7, og de sorte spiller ingenting.
+- [x] Skift til D Minor: D E F G A spiller pad 1 til 5, den sorte tangent Bb spiller pad 6, C spiller pad 7. C#, Eb, F#, Ab og B spiller ingenting.
+- [x] Prøv en toneart med sorte tangenter på padsene (fx Eb Major): Eb, Ab og Bb spiller hver sin pad.
+- [x] Hold en tangent og skift toneart: når du slipper, hænger der ingen note. Gem og åbn projektet: valget er husket.
 
 ## 3. Tidligere ting, der stadig venter
 
 - [ ] Milepæl 9: alle 8 stemninger i Mood-menuen. Tryk Suggest flere gange pr. stemning: giver de fleste klik noget brugbart?
 - [ ] Spørgsmål: skal Suggest måtte bruge farveakkorder (maj7, 9, sus2, m7), selvom de ikke findes som pads?
       (Nu bruger den kun de 7 treklange fra pads. Dreamy, Deep og Soulful bliver derfor mest forskellige i rytme.)
-- [ ] De 6 preview-lyde (Pad, Strings, Keys, Organ, Stab, Pluck): brugbare og forskellige?
+- [x] De 6 preview-lyde (Pad, Strings, Keys, Organ, Stab, Pluck): brugbare og forskellige?
 - [ ] Mood og Sound huskes i projektet.
 - [ ] Afspilning uden DAW (Play med stoppet DAW) og overtagelsen, når DAW'en starter og stopper.
 - [ ] Quick-text med oktaver: `Am+1 F-1 C G+2:2`, derefter Enter.
+- [ ] Quick-text: skriv `Gadd Gsus` og tryk Enter. Blokkene skal læses som Gadd9 og Gsus4 (Gadd9 og Gsus4 skrevet fuldt virker som før).
 - [ ] Det nye udseende: er farverne, knapperne og logoet i mål?
 
 ## 4. Kan ikke testes her

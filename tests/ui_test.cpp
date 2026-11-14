@@ -1504,6 +1504,33 @@ int main (int argc, char** argv)
         snapshot ("export");
         settle (1800);
         check (ui.getSaveButton().getButtonText() == "Save MIDI", "and goes back to its name");
+
+        // A rest at the start and at the end: a DAW that sizes the clip from the notes would lose them, so a silent controller
+        // sits on the first and on the last tick
+        {
+            const engine::Block chord { { 0, engine::ChordType::Minor, engine::kAutoInversion }, 4.0, false };
+            engine::Block rest = chord;
+            rest.rest = true;
+            const auto controllersOf = [&] (const std::vector<engine::Block>& blocks)
+            {
+                processor.setProgression (blocks);
+                settle();
+                std::vector<double> ticks;
+                const auto written = processor.saveMidi();
+                juce::MidiFile midi;
+                juce::FileInputStream stream (written);
+                if (stream.openedOk() && midi.readFrom (stream))
+                    if (const auto* track = midi.getTrack (0))
+                        for (const auto* e : *track)
+                            if (e->message.isController())
+                                ticks.push_back (e->message.getTimeStamp() / midi.getTimeFormat());
+                return ticks;
+            };
+            const auto both = controllersOf ({ rest, chord, rest });
+            check (both.size() == 2 && both[0] < 1.0e-6 && std::abs (both[1] - 12.0) < 1.0e-6, "rests at both ends: a silent controller on the first and on the last tick");
+            check (controllersOf ({ chord, rest, chord }).empty(), "a rest in the middle needs nothing");
+            check (controllersOf ({ chord, chord }).empty(), "no rest, no controller: the file has only notes");
+        }
         folder.deleteRecursively();
     }
 

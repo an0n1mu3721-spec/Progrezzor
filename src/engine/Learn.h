@@ -54,11 +54,15 @@ public:
     int blockCount() const { return total; }
     int playedCount() const { int n = 0; for (bool p : played) n += p ? 1 : 0; return n; }
     bool needsHint() const { return wrongTries >= kLearnHintAfterTries; }
+    // The keys held now can not become the right chord (a key outside the chord, or enough keys that are not the chord): the
+    // block shows red at once, for as long as they are held. This is only what is shown; the wrong tries are counted as before.
+    bool mismatching() const { return mismatch; }
 
     // Called often (every tick of the editor) with the keys that are held now: `classes` are their pitch classes (bit 0 is C) and
     // `count` is how many keys. `nowMs` is any clock that counts milliseconds.
     Outcome update (unsigned classes, int count, double nowMs, const Progression& progression, int tonic)
     {
+        mismatch = false;
         if (! isStarted || isFinished || current < 0 || current >= (int) progression.size())
             return Outcome::Nothing;
 
@@ -90,9 +94,11 @@ public:
         const auto& chord = progression[(size_t) current].chord;
         const unsigned wanted = chordPitchClasses (chord, tonic);
         const int needed = shapeOf (chord.type).count;
+        mismatch = (classes & ~wanted) != 0 || (count >= needed && classes != wanted);
 
         if (classes == wanted && count >= needed)
         {
+            mismatch = false;
             played[(size_t) current] = true;
             wrongTries = 0;
             ++current;
@@ -154,6 +160,7 @@ private:
     bool isStarted = false;
     bool attempting = false;
     bool reportedWrong = false;
+    bool mismatch = false;
     bool waitForRelease = false;
     double mismatchSince = -1.0;
     int maxHeld = 0;

@@ -565,6 +565,29 @@ void testChordRhythm()
     check (exportFileName (one, key, false, true) == "C-Rhythm.mid" && exportFileName (one, key, true, false) == "C-Arp.mid", "the file name has Rhythm, as it has Arp");
 }
 
+void testQuickTextAddSus()
+{
+    std::printf ("quick-text: add and sus without a number\n");
+    const Key cMajor { 0, ScaleId::Major };
+    const auto typeOf = [&] (const std::string& text, ChordType& type, int& root)
+    {
+        const auto r = parseQuickText (text, cMajor, 4.0, false);
+        if (! r.problems.empty() || r.blocks.size() != 1)
+            return false;
+        type = r.blocks[0].chord.type;
+        root = r.blocks[0].chord.root;
+        return true;
+    };
+    ChordType type = ChordType::Major;
+    int root = -1;
+    check (typeOf ("Gadd", type, root) && type == ChordType::Add9 && root == 7, "Gadd is read as Gadd9");
+    check (typeOf ("Cadd9", type, root) && type == ChordType::Add9 && root == 0, "Cadd9 is still Cadd9");
+    check (typeOf ("Cadd", type, root) && type == ChordType::Add9 && root == 0, "Cadd is read as Cadd9");
+    check (typeOf ("Gsus", type, root) && type == ChordType::Sus4 && root == 7, "Gsus is read as Gsus4");
+    check (typeOf ("Gsus2", type, root) && type == ChordType::Sus2 && root == 7, "Gsus2 is still Gsus2");
+    check (typeOf ("Gsus4", type, root) && type == ChordType::Sus4 && root == 7, "Gsus4 is still Gsus4");
+}
+
 void testQuickTextBars()
 {
     std::printf ("quick-text: bars\n");
@@ -2071,6 +2094,22 @@ void testLearn()
     // After a right chord the keys must come up first
     check (hold ({ 60, 64, 67 }) == LearnSession::Outcome::Nothing && session.target() == 1, "the same keys held on do not count for the next chord");
     release();
+    check (! session.mismatching(), "the keys of the chord just played are not shown as wrong for the next one");
+    release();
+    // What is shown red (a session of its own): a key outside the chord at once, but not keys that are on their way to the chord
+    {
+        LearnSession shown;
+        shown.start (p);
+        const auto holdShown = [&] (std::initializer_list<int> notes) { shown.update (classesOf (notes), (int) notes.size(), 0.0, p, tonic); return shown.mismatching(); };
+        check (! holdShown ({ 60 }), "one key of the chord to play: not red");
+        check (! holdShown ({ 60, 64 }), "two of the three keys of the chord: not red");
+        check (holdShown ({ 60, 66 }), "a key outside the chord is red at once, also before there are enough keys");
+        check (holdShown ({ 61, 64, 67 }), "enough keys, but not the chord: red");
+        check (! holdShown ({ 60, 64, 67 }) && shown.target() == 1, "the right chord is not red");
+        check (! holdShown ({ 60, 64, 67 }), "and the keys held on are not red for the next chord");
+        shown.update (0, 0, 0.0, p, tonic);
+        check (! shown.mismatching(), "nothing held: not red");
+    }
 
     // Any octave and any order is the same chord
     check (hold ({ 53, 57, 72 }) == LearnSession::Outcome::Right && session.target() == 2, "F in any octave and inversion (F A C, with the C high) is right");
@@ -2293,6 +2332,7 @@ int main()
     testOctaves();
     testQuickText();
     testQuickTextBars();
+    testQuickTextAddSus();
     testChordPro();
     testKeyGuess();
     testTextExport();
