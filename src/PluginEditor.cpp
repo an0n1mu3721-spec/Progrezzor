@@ -1975,8 +1975,9 @@ public:
 void ProgressionBar::setAdd (bool on)
 {
     addOn = on && ! textMode && ! processor.isLearning(); // also while Play is lit: chords you play are added while the progression plays
-    if (addOn)
-        clearSelection(); // with Add on, pads add chords to the bar instead of trying chords on a block
+    // A block can be marked while Add is on (to delete or change it), but then the pads add chords to the bar instead of trying
+    // chords on the block: the processor is told that nothing is marked as long as Add is on.
+    processor.setSelectedBlock (addOn ? -1 : selected);
     addButton.setToggleState (addOn, juce::dontSendNotification);
     addSeen = processor.getPlayedCount();
     repaint (trayBounds);
@@ -3013,8 +3014,8 @@ void ProgressionBar::select (int index)
         selected = -1;
     }
     else
-        selected = addOn ? -1 : index;
-    processor.setSelectedBlock (selected);
+        selected = index;
+    processor.setSelectedBlock (addOn ? -1 : selected);
     for (int i = 0; i < blocks.size(); ++i)
         blocks[i]->setSelected (i == selected);
 }

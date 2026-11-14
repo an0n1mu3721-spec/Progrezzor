@@ -1347,6 +1347,17 @@ int main (int argc, char** argv)
             bar.getAddButton().triggerClick();
             settle (50);
             check (bar.isAddOn(), "Add is on");
+
+            // With Add on a block can still be marked and deleted, but the pads do not try chords on it (they add at the end)
+            bar.getBlock (1)->onSelect();
+            settle (50);
+            check (bar.getSelected() == 1 && processor.getSelectedBlock() == -1, "with Add on a click marks the block, but pads do not try chords on it");
+            bar.getBlock (1)->onDelete();
+            settle (50);
+            check (processor.getProgression().size() == barBefore.size() - 1 && bar.getSelected() == -1, "with Add on a marked block can be deleted");
+            processor.setProgression (barBefore);
+            settle (50);
+
             restPad.onPress();
             settle (50);
             check (processor.getProgression().size() == barBefore.size() + 1 && processor.getProgression().back().rest, "with Add on a click adds a pause at the end");
