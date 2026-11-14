@@ -3050,7 +3050,7 @@ int main (int argc, char** argv)
         // A plain file: the chords are in the field as Quick-text, and the bar is not changed until Enter
         check (bar.importChordProFile (folder.getChildFile ("simple.cho")), "the file is read");
         settle (60);
-        check (bar.isInTextMode() && bar.getTextEditor().getText() == "C Am F G C Am F G", "the chords are in the Quick-text field");
+        check (bar.isInTextMode() && bar.getTextEditor().getText() == "| C | Am | F | G | C | Am | F | G |", "the chords are in the Quick-text field");
         check (processor.getProgression() == barBefore, "the bar is not changed before Enter");
         snapshot ("chordpro_text");
         bar.cancelQuickText();
@@ -3066,10 +3066,10 @@ int main (int argc, char** argv)
         // Parts: a list, and the one that is picked
         check (bar.readChordProText (folder.getChildFile ("sections.cho").loadFileAsString()) == 5, "the file with parts has a list of five");
         bar.useChordProPart (1);
-        check (bar.isInTextMode() && bar.getTextEditor().getText() == "F G C", "the chorus that was picked is in the field");
+        check (bar.isInTextMode() && bar.getTextEditor().getText() == "| F | G | C |", "the chorus that was picked is in the field");
         bar.cancelQuickText();
         bar.useChordProPart (4);
-        check (bar.getTextEditor().getText() == "Dm G", "and the bridge");
+        check (bar.getTextEditor().getText() == "| Dm | G |", "and the bridge");
         bar.cancelQuickText();
 
         // The key: asked about, never changed by itself
@@ -3081,7 +3081,7 @@ int main (int argc, char** argv)
         bar.getSwitchKeyButton().triggerClick();
         settle (60);
         check (processor.keyParam->getIndex() == 7 && processor.getKey().scale == engine::ScaleId::Major && ! bar.getSwitchKeyButton().isVisible(), "Switch key changes it to G major");
-        check (bar.getTextEditor().getText() == "G Em C D", "the chords in the text are the same");
+        check (bar.getTextEditor().getText() == "| G | Em | C | D |", "the chords in the text are the same");
         bar.applyQuickText();
         check (processor.getProgression().size() == 4 && processor.getProgression()[0].chord.root == 0 && processor.getProgression()[3].chord.root == 7 && silentBlocks() == 0, "and they are I, vi, IV and V of G: nothing outside the key");
         processor.undo();

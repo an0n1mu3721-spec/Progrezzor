@@ -892,6 +892,24 @@ void testTextExport()
                 "a grid is read: % repeats a measure, %% two, N.C. is a pause, margins and strum lines are skipped, shape sets the cells");
     check (grid.hasKey && grid.keyMinor && grid.keyTonic == 9, "the key of the grid file");
     check (chordsAsQuickText (readChordPro ("{sog}\n| C . . . | G . . . |\n{eog}\n[Am]word\n").chords, 100) == "C G Am", "short names (sog, eog), and chords in the text come after");
+
+    // The same chords as a chart with bar lines, which reads back as the same blocks
+    checkEqual (chordsAsQuickTextBars (grid.chords, 100), std::string ("| Am | F | C G | G | Am | Am | R | E | D | E | D | E | Bm | Bm |"),
+                "a grid is shown as a chart: a bar each, half bars share a bar");
+    checkEqual (chordsAsQuickTextBars ({ "C", "G:2", "Am:0.5", "F", "C:0.5" }, 100), std::string ("| C | G:2 | Am:0.5 | F:1 | C:0.5 |"),
+                "other lengths are written after the chord, and a whole bar in the middle of a bar says so");
+    checkEqual (chordsAsQuickTextBars ({}, 100), std::string(), "no chords: no text");
+    bool many = false;
+    check (chordsAsQuickTextBars ({ "C", "G", "Am" }, 2, &many) == "| C | G |" && many, "at most the number of chords that fit, and it says when some are left out");
+    {
+        const Key a { 9, ScaleId::Minor };
+        const auto plain = parseQuickText (chordsAsQuickText (grid.chords, 100), a, 4.0, false);
+        const auto chart = parseQuickText (chordsAsQuickTextBars (grid.chords, 100), a, 4.0, false);
+        check (plain.blocks.size() == chart.blocks.size() && plain.blocks == chart.blocks, "the chart reads back as the same blocks as the plain text");
+        const auto odd = parseQuickText (chordsAsQuickText ({ "C", "G:2", "Am:0.5", "F", "C:0.5" }, 100), a, 4.0, false);
+        const auto oddChart = parseQuickText (chordsAsQuickTextBars ({ "C", "G:2", "Am:0.5", "F", "C:0.5" }, 100), a, 4.0, false);
+        check (odd.blocks == oddChart.blocks, "also with other lengths and off the bar line");
+    }
 }
 
 void testChosenInversion()

@@ -2850,7 +2850,7 @@ void ProgressionBar::useChordProPart (int index)
 void ProgressionBar::showChordProText (const std::vector<std::string>& chords)
 {
     bool tooMany = false;
-    const juce::String text (engine::chordsAsQuickText (chords, engine::kMaxBlocks, &tooMany));
+    const juce::String text (engine::chordsAsQuickTextBars (chords, engine::kMaxBlocks, &tooMany));
 
     if (! textMode)
         startQuickText();

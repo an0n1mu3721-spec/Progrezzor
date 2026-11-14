@@ -6,6 +6,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 
 namespace engine
 {
@@ -485,6 +486,61 @@ std::string chordsAsQuickText(const std::vector<std::string>& chords, int maxCho
             text += ' ';
         text += chords[i];
     }
+    return text;
+}
+
+namespace
+{
+// One word of Quick-text ("Am", "C:0.5", "C:2") split into the chord and the length in bars (1 when none is written)
+void splitLength(const std::string& word, std::string& chord, std::string& length, double& bars)
+{
+    const auto colon = word.find(':');
+    chord = word.substr(0, colon);
+    length = colon == std::string::npos ? std::string() : word.substr(colon + 1);
+    bars = length.empty() ? 1.0 : std::atof(length.c_str());
+}
+}
+
+std::string chordsAsQuickTextBars(const std::vector<std::string>& chords, int maxChords, bool* tooMany)
+{
+    if (tooMany != nullptr)
+        *tooMany = (int) chords.size() > maxChords;
+    const size_t count = std::min(chords.size(), (size_t) std::max(0, maxChords));
+
+    std::string text;
+    double position = 0.0; // in bars
+    const auto onBarLine = [](double bars) { return std::fabs(bars - std::round(bars)) < 1.0e-6; };
+    for (size_t i = 0; i < count; ++i)
+    {
+        std::string chord, length;
+        double bars = 1.0;
+        splitLength(chords[i], chord, length, bars);
+        std::string cell;
+        double used = bars;
+        if (onBarLine(position) && std::fabs(bars - 1.0) < 1.0e-6)
+            cell = chord; // a whole bar
+        else if (onBarLine(position) && std::fabs(bars - 0.5) < 1.0e-6 && i + 1 < count)
+        {
+            std::string nextChord, nextLength;
+            double nextBars = 1.0;
+            splitLength(chords[i + 1], nextChord, nextLength, nextBars);
+            if (std::fabs(nextBars - 0.5) < 1.0e-6)
+            {
+                cell = chord + " " + nextChord; // two half bars share the bar
+                used = 1.0;
+                ++i;
+            }
+            else
+                cell = chord + ":" + length;
+        }
+        else
+            cell = length.empty() ? chord + ":1" : chord + ":" + length;
+        text += text.empty() ? "| " : " | ";
+        text += cell;
+        position += used;
+    }
+    if (!text.empty())
+        text += " |";
     return text;
 }
 

@@ -16,7 +16,7 @@ tag the commit (`vX.Y.Z`).
 - **Quick-text understands "add" and "sus" without a number.** Gadd is read as Gadd9 and Gsus as Gsus4, so Gadd, Cadd, Gsus and Csus no longer show up red.
 - **A rest at the start or the end of the progression stays in the MIDI file in your DAW.** Some DAWs size the clip from the first note to the last, so the rest fell away. The file now has a silent MIDI controller (#119, value 0) on the first and the last tick when the progression starts or ends with a rest. It makes no sound and can be deleted in the clip.
 - **Learn: a wrong key is shown red at once** and stays red while it is held, with a cross in the corner, so it is not mixed up with the pulsing amber edge of the chord to play.
-- **Quick-text shows the chords as a chart.** When you open it again, the text is written with bar lines (| C | Am | F G |), however you typed it. You can still type the short way too (Am*2, Am:2).
+- **Quick-text shows the chords as a chart.** When you open it again, and when you read in a chord file, the text is written with bar lines (| C | Am | F G |), however you typed it. You can still type the short way too (Am*2, Am:2).
 - **You can mark and delete a block while Add is on.** Before, a click on a block did nothing while Add was lit. Pads still add chords at the end while Add is on.
 - **About links to the Progrezzor page** (music.henrikjuhl.dk/plugins/progrezzor) instead of GitHub.
 - **The small gear on a block sits further from the edge of the block.**

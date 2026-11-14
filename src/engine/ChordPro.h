@@ -45,6 +45,10 @@ bool isChordProFileName(const std::string& fileName);
 // The chords as Quick-text, one bar each: "C Am F G". At most `maxChords`; `tooMany` says whether some were left out.
 std::string chordsAsQuickText(const std::vector<std::string>& chords, int maxChords, bool* tooMany = nullptr);
 
+// The same chords written as a chart with bar lines: | C | Am | F G | C:2 |. A word of one bar is a bar, two half bars that start a bar
+// share it, and any other length is written after the chord (C:2, G:0.5). Reads back as exactly the same blocks.
+std::string chordsAsQuickTextBars(const std::vector<std::string>& chords, int maxChords, bool* tooMany = nullptr);
+
 // A ChordPro file for the progression: the title, the key and the chords as a grid with the cells of a measure as beats, so that
 // the lengths are kept (a chord that goes on is written as ".", a pause as "N.C."). Octaves are not written.
 // `barBeats` is the length of a bar in beats.
