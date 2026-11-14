@@ -2906,6 +2906,37 @@ void ProgressionBar::filesDropped (const juce::StringArray& files, int, int)
         importChordProFile (juce::File (files[0]));
 }
 
+// A grey hint line in the Settings menu: a row of its own, a little shorter than a menu item, so that a hint of several lines
+// stays together. It cannot be clicked and does not close the menu.
+class HintRow : public juce::PopupMenu::CustomComponent
+{
+public:
+    // false: a click does not pick the row, so the menu stays open
+    explicit HintRow (juce::String t) : juce::PopupMenu::CustomComponent (false), text (std::move (t)) {}
+
+    void getIdealSize (int& width, int& height) override
+    {
+        width = juce::jmax (260, juce::GlyphArrangement::getStringWidthInt (font(), text) + 30);
+        height = 17;
+    }
+
+    void paint (juce::Graphics& g) override
+    {
+        g.setColour (theme::dimText);
+        g.setFont (font());
+        g.drawFittedText (text, getLocalBounds().withTrimmedLeft (20).withTrimmedRight (6), juce::Justification::centredLeft, 1);
+    }
+
+private:
+    juce::Font font() const
+    {
+        if (auto* l = dynamic_cast<theme::LookAndFeel*> (&getLookAndFeel()))
+            return l->labelFont (14.0f);
+        return juce::Font (juce::FontOptions (14.0f));
+    }
+    juce::String text;
+};
+
 void ProgressionBar::showSettingsMenu()
 {
     juce::PopupMenu menu;
@@ -2920,13 +2951,13 @@ void ProgressionBar::showSettingsMenu()
     for (int i = 0; i < 5; ++i)
         menu.addItem (i + 1, names[i], true, i - 2 == processor.getHomeOctave());
     menu.addSeparator();
-    menu.addItem (100, "Kept for every project. The keyboard shows where.", false, false);
+    menu.addCustomItem (100, std::make_unique<HintRow> ("Kept for every project. The keyboard shows where."));
     menu.addSeparator();
     menu.addSectionHeader ("Import and export");
     menu.addItem (25, "Import ChordPro...", editing);
     // Hint lines under the item, dimmed like the other explanations (a menu item cannot carry a tooltip)
-    menu.addItem (28, "Helper only. Reads the chords in [brackets].", false, false);
-    menu.addItem (29, "Check the result in Quick-text before you press Enter.", false, false);
+    menu.addCustomItem (28, std::make_unique<HintRow> ("Helper only. Reads the chords in [brackets]."));
+    menu.addCustomItem (29, std::make_unique<HintRow> ("Check the result in Quick-text before you press Enter."));
     menu.addItem (26, "Copy as text", ! processor.getProgression().empty());
     menu.addItem (27, "Save ChordPro...", ! processor.getProgression().empty());
     menu.addSeparator();
@@ -2934,9 +2965,9 @@ void ProgressionBar::showSettingsMenu()
     menu.addItem (40, "Root position", true, processor.voicingParam->getIndex() == 0);
     menu.addItem (41, "Nearest inversion", true, processor.voicingParam->getIndex() == 1);
     // A menu item cannot carry a tooltip, so the explanation stands under it (in short lines)
-    menu.addItem (101, "Each chord uses the inversion closest", false, false);
-    menu.addItem (102, "to the home chord, like a keyboard player", false, false);
-    menu.addItem (103, "keeping the hand in one place.", false, false);
+    menu.addCustomItem (101, std::make_unique<HintRow> ("Each chord uses the inversion closest"));
+    menu.addCustomItem (102, std::make_unique<HintRow> ("to the home chord, like a keyboard player"));
+    menu.addCustomItem (103, std::make_unique<HintRow> ("keeping the hand in one place."));
     menu.addSeparator();
     menu.addSectionHeader ("Keyboard"); // which pad a MIDI key plays, saved with the project
     menu.addItem (30, "White keys", true, processor.keyboardModeParam->getIndex() == ProgrezzorProcessor::kKeyboardWhiteKeys);

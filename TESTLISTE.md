@@ -119,9 +119,9 @@ Kræver et MIDI-tastatur.
 - [x] Den gamle notation virker stadig (`Am*2 F:2`). Et ukendt ord eller en tredje akkord i en takt er rødt, og resten virker.
 
 ## 2l. ChordPro-import (branch feature/chordpro-import)
-- [ ] Settings (tandhjulet) > Import ChordPro...: en filvælger åbner (ikke i Play). Vælg en .cho-fil: akkorderne står som tekst i Quick-text-feltet, og rundgangen er uændret.
-- [ ] Enter anvender (en takt pr. akkord), Esc fortryder. Fortryd (Ctrl+Z) tager det tilbage.
-- [ ] En fil med afsnit: ingen liste. Hele sangen kommer i feltet, og afsnitsnavnene ([VERSE], [CHORUS]) står ikke der.
+- [x] Settings (tandhjulet) > Import ChordPro...: en filvælger åbner (ikke i Play). Vælg en .cho-fil: akkorderne står som tekst i Quick-text-feltet, og rundgangen er uændret.
+- [x] Enter anvender (en takt pr. akkord), Esc fortryder. Fortryd (Ctrl+Z) tager det tilbage.
+- [x] En fil med afsnit: ingen liste. Hele sangen kommer i feltet, og afsnitsnavnene ([VERSE], [CHORUS]) står ikke der.
 - [ ] En fil med {key: G}: beskeden "The song says it is in G major. Switch the key?" og en knap. Toneart skiftes kun, når du trykker på knappen.
 - [ ] Træk en .cho-fil ind på rundgangen: det samme som via Settings.
 - [ ] Ukendte akkorder (fx N.C.) er røde, og resten virker. En fil uden akkorder giver beskeden "No chords found in that file."
