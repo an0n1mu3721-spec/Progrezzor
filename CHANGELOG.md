@@ -17,6 +17,7 @@ tag the commit (`vX.Y.Z`).
 - **A rest at the start or the end of the progression stays in the MIDI file in your DAW.** Some DAWs size the clip from the first note to the last, so the rest fell away. The file now has a silent MIDI controller (#119, value 0) on the first and the last tick when the progression starts or ends with a rest. It makes no sound and can be deleted in the clip.
 - **Learn: a wrong key is shown red at once** and stays red while it is held, with a cross in the corner, so it is not mixed up with the pulsing amber edge of the chord to play.
 - **You can mark and delete a block while Add is on.** Before, a click on a block did nothing while Add was lit. Pads still add chords at the end while Add is on.
+- **The link in About goes to the Progrezzor page** (music.henrikjuhl.dk/plugins/progrezzor/).
 - **The small gear on a block sits further from the edge of the block.**
 - **Tidier buttons in the progression card.** Clear now sits under Add, as wide as Add, with the pencil (Quick-text) beside it. Undo and Redo have a row of their own, and the Arp button is a little taller, with more room inside it.
 - **The three-dot button next to Arp is a little wider.**

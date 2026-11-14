@@ -4002,7 +4002,7 @@ public:
             button.setTooltip (url);
             addAndMakeVisible (button);
         };
-        link (homepage, "music.henrikjuhl.dk", "https://music.henrikjuhl.dk");
+        link (homepage, "music.henrikjuhl.dk", "https://music.henrikjuhl.dk/plugins/progrezzor/");
         link (source, "github.com/travisdk/Progrezzor", "https://github.com/travisdk/Progrezzor");
         licencesButton.setButtonText ("Licences");
         licencesButton.setTooltip ("Licences and third-party notices.");
