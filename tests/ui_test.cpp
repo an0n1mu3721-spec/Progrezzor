@@ -879,8 +879,8 @@ int main (int argc, char** argv)
                     urls.push_back (link->getURL().toString (true).toStdString());
                     texts.push_back (link->getButtonText().toStdString());
                 }
-            check (urls == std::vector<std::string> ({ "https://music.henrikjuhl.dk/plugins/progrezzor/", "https://github.com/travisdk/Progrezzor" }), "the two links go to the right places");
-            check (texts == std::vector<std::string> ({ "music.henrikjuhl.dk", "github.com/travisdk/Progrezzor" }), "and show their addresses");
+            check (urls == std::vector<std::string> ({ "https://music.henrikjuhl.dk", "https://music.henrikjuhl.dk/plugins/progrezzor/" }), "the two links go to the right places");
+            check (texts == std::vector<std::string> ({ "music.henrikjuhl.dk", "music.henrikjuhl.dk/plugins/progrezzor" }), "and show their addresses");
         }
         {
             // The Licences button shows the licence texts that are baked into the plug-in, in a read-only, scrollable field

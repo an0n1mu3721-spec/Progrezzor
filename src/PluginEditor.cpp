@@ -4002,8 +4002,8 @@ public:
             button.setTooltip (url);
             addAndMakeVisible (button);
         };
-        link (homepage, "music.henrikjuhl.dk", "https://music.henrikjuhl.dk/plugins/progrezzor/");
-        link (source, "github.com/travisdk/Progrezzor", "https://github.com/travisdk/Progrezzor");
+        link (homepage, "music.henrikjuhl.dk", "https://music.henrikjuhl.dk");
+        link (source, "music.henrikjuhl.dk/plugins/progrezzor", "https://music.henrikjuhl.dk/plugins/progrezzor/");
         licencesButton.setButtonText ("Licences");
         licencesButton.setTooltip ("Licences and third-party notices.");
         licencesButton.onClick = [this] { setShowingLicences (! showingLicences); };

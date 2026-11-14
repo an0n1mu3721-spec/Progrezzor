@@ -155,9 +155,9 @@ Kræver et MIDI-tastatur.
 - [x] Mood og Sound huskes i projektet.
 - [ ] Afspilning uden DAW (Play med stoppet DAW) og overtagelsen, når DAW'en starter og stopper.
 - [ ] Tænd Add og klik på en blok: den markeres (pulserende kant), og Delete sletter den. Tryk så en pad: akkorden lægges stadig bagerst, og blokken prøver ikke akkorden.
-- [ ] Quick-text med oktaver: `Am+1 F-1 C G+2:2`, derefter Enter.
-- [ ] Quick-text: skriv `Gadd Gsus` og tryk Enter. Blokkene skal læses som Gadd9 og Gsus4 (Gadd9 og Gsus4 skrevet fuldt virker som før).
-- [ ] Det nye udseende: er farverne, knapperne og logoet i mål?
+- [x] Quick-text med oktaver: `Am+1 F-1 C G+2:2`, derefter Enter.
+- [x] Quick-text: skriv `Gadd Gsus` og tryk Enter. Blokkene skal læses som Gadd9 og Gsus4 (Gadd9 og Gsus4 skrevet fuldt virker som før).
+- [x] Det nye udseende: er farverne, knapperne og logoet i mål?
 
 ## 4. Kan ikke testes her
 
