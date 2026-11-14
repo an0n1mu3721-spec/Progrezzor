@@ -149,6 +149,8 @@ private:
 class BlockButton : public juce::Component, public juce::SettableTooltipClient
 {
 public:
+    // Where the middle of the block is, in the coordinates of the bar (the blocks sit in a holder inside the bar)
+    juce::Point<int> centreInBar() const { return getBounds().getCentre() + (getParentComponent() != nullptr ? getParentComponent()->getPosition() : juce::Point<int>()); }
     std::function<void()> onPress;
     std::function<void()> onRelease;
     std::function<void()> onSelect;       // toggles the selection
@@ -231,11 +233,12 @@ private:
 };
 
 // The bottom bar: the blocks of the progression side by side
-class ProgressionBar : public juce::Component, public juce::FileDragAndDropTarget
+class ProgressionBar : public juce::Component, public juce::FileDragAndDropTarget, private juce::ScrollBar::Listener
 {
 public:
     explicit ProgressionBar (ProgrezzorProcessor&);
     ~ProgressionBar() override;
+    void mouseWheelMove (const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
 
     // Rebuilds the blocks from the processor's progression
     void refresh();
@@ -424,8 +427,12 @@ private:
     juce::Rectangle<int> noticeBounds;
     DragTile dragTile;
     juce::OwnedArray<BlockButton> blocks;
+    juce::Component blockHolder;                // the blocks sit in this one, so that they are cut off at the edge of the tray when the rows scroll
+    juce::ScrollBar scrollBar { true };         // up and down, only there when the rows do not all fit
+    int scrollY = 0, contentHeight = 0;
+    bool scrollToEnd = false;                   // a block was added: show the last row
+    void scrollBarMoved (juce::ScrollBar*, double newRangeStart) override;
     static constexpr double kPixelsPerBar = 124.0;     // how wide one bar is on a block, when there is room
-    static constexpr double kLeastPixelsPerBar = 92.0; // and the narrowest it gets when one block is pulled long
     juce::Rectangle<int> trayBounds, labelBounds;
     bool dragActive = false;
     std::vector<juce::Rectangle<int>> slots;    // where the blocks belong (the one that is dragged may be elsewhere)

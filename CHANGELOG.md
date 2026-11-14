@@ -21,6 +21,11 @@ tag the commit (`vX.Y.Z`).
 - **The three-dot button next to Arp is a little wider.**
 - **Clearer tooltips** for Quick-text (no stray % sign) and for Settings, which now says what it holds.
 
+### Changed
+- **Half-bar blocks are 10 px wider,** and while the mouse is over one, its name and length fade so that the lock, gear and arrows are easy to see and hit.
+- **Blocks never shrink to fit.** A bar is always the same width, whatever else is in the progression. When the blocks do not fit in a row they go on to a new row, and when the rows do not fit, the progression scrolls up and down.
+- **The window opens a little wider (1100 px),** so that more blocks fit in a row.
+
 ## [1.0.0] – 2026-11-10
 
 The first public version. Linux and Windows, as CLAP and VST3 (macOS is not part of it).
