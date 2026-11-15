@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 cmake_minimum_required(VERSION 3.22)
-project(Progrezzor VERSION 1.0.0 LANGUAGES C CXX)
+project(Progrezzor VERSION 1.1.0 LANGUAGES C CXX)
 
 # A build id shown next to the version (the git commit, "-dirty" if there are local changes). CI and scripts can set it with
 # -DPROGREZZOR_BUILD_ID=... ; without git it is left out.

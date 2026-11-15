@@ -5,7 +5,7 @@
 A very easy MIDI chord tool for every kind of music. Jam on the pads, find a progression you like, and drag it into your DAW as
 MIDI. You do not need to know any music theory.
 
-Version 1.0.0. Free and open source (GNU AGPLv3). CLAP and VST3 for Linux and Windows.
+Version 1.1.0. Free and open source (GNU AGPLv3). CLAP and VST3 for Linux and Windows.
 
 ## Quick start
 
@@ -79,7 +79,7 @@ and the progression plays twice.
 - ChordPro import is a helper, not a guarantee. It reads the chords in square brackets, the title and the key, and skips lyrics, notes and most other markup. Always check the chords in Quick-text before you press Enter.
 - A capo is not read by the import, so the chords are taken as written.
 - Chords outside the key are shown in the progression. With Lock to scale on, they are marked and do not play until you allow them.
-- Tested on Linux with Bitwig and REAPER. Windows and Ableton Live are not tested yet.
+- Tested on Linux with Bitwig and REAPER, and the Windows build has been tried. Ableton Live is not tested yet.
 
 ## Install
 
