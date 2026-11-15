@@ -7,6 +7,8 @@ MIDI. You do not need to know any music theory.
 
 Version 1.1.0. Free and open source (GNU AGPLv3). CLAP and VST3 for Linux and Windows.
 
+**Manual with screenshots:** [music.henrikjuhl.dk/plugins/progrezzor/manual](https://music.henrikjuhl.dk/plugins/progrezzor/manual/). The same text is in [docs/manual/manual.md](docs/manual/manual.md).
+
 ## Quick start
 
 1. Put Progrezzor on a MIDI track with a synth after it (see [Getting the notes to your synth](#getting-the-notes-to-your-synth)).
