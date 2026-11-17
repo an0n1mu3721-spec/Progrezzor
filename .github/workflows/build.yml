@@ -44,6 +44,11 @@ jobs:
             generator: ""            # Visual Studio 2022 (MSVC), the default on this runner
             package: package-windows
             targets: Progrezzor_CLAP Progrezzor_VST3 engine_test
+          - name: macOS
+            os: macos-15
+            generator: -G Ninja
+            package: package-macos
+            targets: Progrezzor_CLAP Progrezzor_VST3 Progrezzor_AU ProgrezzorMidiFX_AU engine_test
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -54,6 +59,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ninja-build xvfb libasound2-dev libfreetype-dev libfontconfig1-dev \
             libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: brew install ninja
 
       - name: Fetch JUCE and clap-juce-extensions
         shell: bash
@@ -80,8 +89,8 @@ jobs:
         if: runner.os == 'Linux'
         run: xvfb-run -a ctest --test-dir build -C Release --output-on-failure
 
-      - name: Tests (Windows, the engine tests)
-        if: runner.os == 'Windows'
+      - name: Tests (Windows and macOS, the engine tests)
+        if: runner.os != 'Linux'
         run: ctest --test-dir build -C Release --output-on-failure
 
       - name: Package

@@ -30,10 +30,14 @@ constexpr double kJumpBeats = 0.25;  // the host's position must be at least thi
 constexpr int kStuckBlocks = 4;       // a playing host that gives the same position this many blocks in a row is not moving
 }
 
+// A stereo output from day one: it carries the preview sound, and some hosts (Bitwig) do not run a plug-in without audio
+// ports. The Audio Unit MIDI FX build (Logic Pro's MIDI FX slot) has no audio at all: the instrument after it makes the sound.
 ProgrezzorProcessor::ProgrezzorProcessor()
-    // A stereo output from day one: it carries the preview sound, and some hosts (Bitwig) do not run a plug-in
-    // without audio ports.
+   #if JucePlugin_IsMidiEffect
+    : AudioProcessor (BusesProperties())
+   #else
     : AudioProcessor (BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+   #endif
 {
     loadPianoBank();
     juce::StringArray keys, scales;
@@ -161,8 +165,12 @@ void ProgrezzorProcessor::prepareToPlay (double newSampleRate, int)
 
 bool ProgrezzorProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
+   #if JucePlugin_IsMidiEffect
+    return layouts.getMainInputChannelSet().isDisabled() && layouts.getMainOutputChannelSet().isDisabled();
+   #else
     return layouts.getMainInputChannelSet().isDisabled()
         && layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
+   #endif
 }
 
 void ProgrezzorProcessor::pressPad (int pad)
@@ -308,6 +316,11 @@ public:
 
     void render (int upTo)
     {
+        if (upTo > cursor && buffer.getNumChannels() == 0) // MIDI FX build: no audio to write, only the MIDI goes out
+        {
+            cursor = upTo;
+            return;
+        }
         if (upTo > cursor)
         {
             auto* right = buffer.getNumChannels() > 1 ? buffer.getWritePointer (1) : buffer.getWritePointer (0);

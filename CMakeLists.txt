@@ -35,7 +35,11 @@ set(CLAP_JUCE_EXTENSIONS_DIR "${PROGREZZOR_HOME}/SDKs/clap-juce-extensions-main"
     "Path to a clap-juce-extensions source tree")
 
 # Per-user plug-in folders from the CLAP and VST3 specifications (no administrator rights needed)
-if(WIN32)
+if(APPLE)
+    set(PROGREZZOR_DEFAULT_CLAP_DIR "${PROGREZZOR_HOME}/Library/Audio/Plug-Ins/CLAP")
+    set(PROGREZZOR_DEFAULT_VST3_DIR "${PROGREZZOR_HOME}/Library/Audio/Plug-Ins/VST3")
+    set(PROGREZZOR_DEFAULT_AU_DIR "${PROGREZZOR_HOME}/Library/Audio/Plug-Ins/Components")
+elseif(WIN32)
     file(TO_CMAKE_PATH "$ENV{LOCALAPPDATA}" PROGREZZOR_LOCALAPPDATA)
     set(PROGREZZOR_DEFAULT_CLAP_DIR "${PROGREZZOR_LOCALAPPDATA}/Programs/Common/CLAP")
     set(PROGREZZOR_DEFAULT_VST3_DIR "${PROGREZZOR_LOCALAPPDATA}/Programs/Common/VST3")
@@ -46,12 +50,26 @@ endif()
 option(PROGREZZOR_INSTALL_AFTER_BUILD "Copy the CLAP and VST3 into the user's plug-in folders after each build" ON)
 set(CLAP_INSTALL_DIR "${PROGREZZOR_DEFAULT_CLAP_DIR}" CACHE PATH "Where the built .clap is copied")
 set(VST3_INSTALL_DIR "${PROGREZZOR_DEFAULT_VST3_DIR}" CACHE PATH "Where the built .vst3 is copied")
+if(APPLE)
+    set(AU_INSTALL_DIR "${PROGREZZOR_DEFAULT_AU_DIR}" CACHE PATH "Where the built .component (Audio Unit) is copied")
+endif()
 
 foreach(sdk_dir JUCE_DIR CLAP_JUCE_EXTENSIONS_DIR)
     if(NOT EXISTS "${${sdk_dir}}/CMakeLists.txt")
         message(FATAL_ERROR "${sdk_dir} is '${${sdk_dir}}' but no CMakeLists.txt was found there")
     endif()
 endforeach()
+
+# macOS: Apple Silicon by default; pass -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" for a universal build.
+if(APPLE)
+    if(NOT CMAKE_OSX_ARCHITECTURES)
+        set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "macOS architectures" FORCE)
+    endif()
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Oldest macOS the plug-in runs on")
+    set(PROGREZZOR_FORMATS AU VST3)   # AU for Logic Pro and GarageBand
+else()
+    set(PROGREZZOR_FORMATS VST3)
+endif()
 
 add_subdirectory(${JUCE_DIR} juce EXCLUDE_FROM_ALL)
 add_subdirectory(${CLAP_JUCE_EXTENSIONS_DIR} clap-juce-extensions EXCLUDE_FROM_ALL)
@@ -90,9 +108,11 @@ juce_add_plugin(Progrezzor
     COMPANY_NAME "Henrik Juhl"
     PLUGIN_MANUFACTURER_CODE Hjuh
     PLUGIN_CODE Prgz
-    FORMATS VST3
-    COPY_PLUGIN_AFTER_BUILD ${PROGREZZOR_INSTALL_AFTER_BUILD}   # VST3 (the CLAP is copied by the command further down)
+    FORMATS ${PROGREZZOR_FORMATS}
+    COPY_PLUGIN_AFTER_BUILD ${PROGREZZOR_INSTALL_AFTER_BUILD}   # VST3 and AU (the CLAP is copied by the command further down)
     VST3_COPY_DIR "${VST3_INSTALL_DIR}"
+    AU_COPY_DIR "${AU_INSTALL_DIR}"
+    BUNDLE_ID "com.henrik.progrezzor"
     PRODUCT_NAME "Progrezzor"
     IS_SYNTH TRUE
     IS_MIDI_EFFECT FALSE
@@ -131,20 +151,58 @@ clap_juce_extensions_plugin(TARGET Progrezzor
     CLAP_FEATURES note-effect utility
     CLAP_USE_JUCE_PARAMETER_RANGES ALL)
 
+# macOS: a second Audio Unit for Logic Pro's MIDI FX slot (type aumi). It sits before any instrument on the same track and
+# sends it the chords as MIDI. Same code, no audio output, its own plug-in code so Logic lists both.
+if(APPLE)
+    juce_add_plugin(ProgrezzorMidiFX
+        COMPANY_NAME "Henrik Juhl"
+        PLUGIN_MANUFACTURER_CODE Hjuh
+        PLUGIN_CODE Prgm
+        FORMATS AU
+        COPY_PLUGIN_AFTER_BUILD ${PROGREZZOR_INSTALL_AFTER_BUILD}
+        AU_COPY_DIR "${AU_INSTALL_DIR}"
+        BUNDLE_ID "com.henrik.progrezzor.midifx"
+        PRODUCT_NAME "Progrezzor MIDI FX"
+        IS_SYNTH FALSE
+        IS_MIDI_EFFECT TRUE
+        NEEDS_MIDI_INPUT TRUE
+        NEEDS_MIDI_OUTPUT TRUE
+        EDITOR_WANTS_KEYBOARD_FOCUS FALSE)
+    target_sources(ProgrezzorMidiFX PRIVATE
+        src/PluginProcessor.cpp src/PluginProcessor.h src/PluginEditor.cpp src/PluginEditor.h src/PadSynth.h
+        src/ProgrezzorLookAndFeel.h)
+    target_compile_definitions(ProgrezzorMidiFX PUBLIC
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_USE_OGGVORBIS=0
+        JUCE_USE_MP3AUDIOFORMAT=0)
+    target_link_libraries(ProgrezzorMidiFX
+        PRIVATE ProgrezzorFonts ProgrezzorPiano ProgrezzorLicences progrezzor_engine juce::juce_audio_utils
+        PUBLIC juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)
+endif()
+
 # Every build puts the finished plugin in the user's own plugin folders (unless PROGREZZOR_INSTALL_AFTER_BUILD is OFF, as on CI)
 if(PROGREZZOR_INSTALL_AFTER_BUILD)
-    add_custom_command(TARGET Progrezzor_CLAP POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${CLAP_INSTALL_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Progrezzor_CLAP>" "${CLAP_INSTALL_DIR}/"
-        COMMENT "Installing Progrezzor.clap into ${CLAP_INSTALL_DIR}"
-        VERBATIM)
+    if(APPLE) # on macOS the .clap is a bundle (a folder)
+        add_custom_command(TARGET Progrezzor_CLAP POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CLAP_INSTALL_DIR}/Progrezzor.clap"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "$<TARGET_BUNDLE_DIR:Progrezzor_CLAP>" "${CLAP_INSTALL_DIR}/Progrezzor.clap"
+            COMMENT "Installing Progrezzor.clap into ${CLAP_INSTALL_DIR}"
+            VERBATIM)
+    else()
+        add_custom_command(TARGET Progrezzor_CLAP POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${CLAP_INSTALL_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Progrezzor_CLAP>" "${CLAP_INSTALL_DIR}/"
+            COMMENT "Installing Progrezzor.clap into ${CLAP_INSTALL_DIR}"
+            VERBATIM)
+    endif()
 endif()
 
 # Headless CLAP host for scripted tests. Loads the built .clap straight from the build tree.
 #   cmake --build build --target Progrezzor_CLAP clap_test_host && ctest --test-dir build --output-on-failure
 enable_testing()
 
-if(NOT WIN32) # the headless host uses dlopen
+if(NOT WIN32 AND NOT APPLE) # the headless host uses dlopen on a plain .clap file
     add_executable(clap_test_host tests/clap_test_host.cpp)
     target_include_directories(clap_test_host SYSTEM PRIVATE "${CLAP_JUCE_EXTENSIONS_DIR}/clap-libs/clap/include")
     target_link_libraries(clap_test_host PRIVATE ${CMAKE_DL_LIBS} progrezzor_engine)
@@ -202,7 +260,14 @@ endif()
 # Archive with the CLAP and VST3 plug-ins, the licence, the changelog, the third-party notices and install notes:
 # dist/Progrezzor-linux-x86_64.tar.gz on Linux, dist/Progrezzor-windows-x64.zip on Windows. The file names carry no version; the
 # folder inside the archive does. (Same set-up as SubForge.) These are internal test builds (0.9.x) and are not published.
-if(WIN32)
+if(APPLE)
+    set(PROGREZZOR_PACKAGE_TARGET package-macos)
+    set(PROGREZZOR_PACKAGE_NAME "Progrezzor-${PROJECT_VERSION}-macos")
+    set(PROGREZZOR_PACKAGE_FILE "Progrezzor-macos.zip")
+    set(PROGREZZOR_TAR_FLAGS cf)
+    set(PROGREZZOR_PACKAGE_FORMAT --format=zip)
+    set(PROGREZZOR_INSTALL_NOTES "${CMAKE_SOURCE_DIR}/packaging/INSTALL-macos.txt")
+elseif(WIN32)
     set(PROGREZZOR_PACKAGE_TARGET package-windows)
     set(PROGREZZOR_PACKAGE_NAME "Progrezzor-${PROJECT_VERSION}-windows-x64")
     set(PROGREZZOR_PACKAGE_FILE "Progrezzor-windows-x64.zip")
@@ -218,10 +283,21 @@ else()
     set(PROGREZZOR_INSTALL_NOTES "${CMAKE_SOURCE_DIR}/packaging/INSTALL-linux.txt")
 endif()
 set(PROGREZZOR_PACKAGE_DIR "${CMAKE_BINARY_DIR}/package/${PROGREZZOR_PACKAGE_NAME}")
+if(APPLE)
+    set(PROGREZZOR_PACKAGE_CLAP_CMD ${CMAKE_COMMAND} -E copy_directory $<TARGET_BUNDLE_DIR:Progrezzor_CLAP> ${PROGREZZOR_PACKAGE_DIR}/Progrezzor.clap)
+    set(PROGREZZOR_PACKAGE_EXTRA_CMD ${CMAKE_COMMAND} -E copy_directory $<TARGET_BUNDLE_DIR:Progrezzor_AU> ${PROGREZZOR_PACKAGE_DIR}/Progrezzor.component
+        COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_BUNDLE_DIR:ProgrezzorMidiFX_AU> "${PROGREZZOR_PACKAGE_DIR}/Progrezzor MIDI FX.component")
+    set(PROGREZZOR_PACKAGE_EXTRA_DEPS Progrezzor_AU ProgrezzorMidiFX_AU)
+else()
+    set(PROGREZZOR_PACKAGE_CLAP_CMD ${CMAKE_COMMAND} -E copy $<TARGET_FILE:Progrezzor_CLAP> ${PROGREZZOR_PACKAGE_DIR}/)
+    set(PROGREZZOR_PACKAGE_EXTRA_CMD ${CMAKE_COMMAND} -E true)
+    set(PROGREZZOR_PACKAGE_EXTRA_DEPS)
+endif()
 add_custom_target(${PROGREZZOR_PACKAGE_TARGET}
     COMMAND ${CMAKE_COMMAND} -E rm -rf ${PROGREZZOR_PACKAGE_DIR}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${PROGREZZOR_PACKAGE_DIR}
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:Progrezzor_CLAP> ${PROGREZZOR_PACKAGE_DIR}/
+    COMMAND ${PROGREZZOR_PACKAGE_CLAP_CMD}
+    COMMAND ${PROGREZZOR_PACKAGE_EXTRA_CMD}
     COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_FILE_DIR:Progrezzor_VST3>/../.. ${PROGREZZOR_PACKAGE_DIR}/Progrezzor.vst3
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/LICENSE ${PROGREZZOR_PACKAGE_DIR}/LICENSE.txt
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${PROGREZZOR_PACKAGE_DIR}/
@@ -230,6 +306,6 @@ add_custom_target(${PROGREZZOR_PACKAGE_TARGET}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/dist
     COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_BINARY_DIR}/package
             ${CMAKE_COMMAND} -E tar ${PROGREZZOR_TAR_FLAGS} ${CMAKE_SOURCE_DIR}/dist/${PROGREZZOR_PACKAGE_FILE} ${PROGREZZOR_PACKAGE_FORMAT} ${PROGREZZOR_PACKAGE_NAME}
-    DEPENDS Progrezzor_CLAP Progrezzor_VST3
+    DEPENDS Progrezzor_CLAP Progrezzor_VST3 ${PROGREZZOR_PACKAGE_EXTRA_DEPS}
     COMMENT "Packaging dist/${PROGREZZOR_PACKAGE_FILE}"
     VERBATIM)

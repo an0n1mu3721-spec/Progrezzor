@@ -1,0 +1,27 @@
+Progrezzor for macOS (Apple Silicon)
+====================================
+
+The archive has these plug-ins:
+
+  Progrezzor.component           Audio Unit instrument, for Logic Pro and GarageBand (with the preview sounds)
+  Progrezzor MIDI FX.component   Audio Unit MIDI FX, for Logic Pro's MIDI FX slot (drives the instrument after it)
+  Progrezzor.vst3        VST3, for Ableton Live, Cubase, Studio One and others
+  Progrezzor.clap        CLAP, for Bitwig Studio and REAPER
+
+Copy them to your own plug-in folders (Finder: Go > Go to Folder...):
+
+  both .component files  ->  ~/Library/Audio/Plug-Ins/Components/
+  Progrezzor.vst3       ->  ~/Library/Audio/Plug-Ins/VST3/
+  Progrezzor.clap       ->  ~/Library/Audio/Plug-Ins/CLAP/
+
+The build is not signed by Apple. If macOS blocks it, open Terminal once and type:
+
+  xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/Components/Progrezzor.component
+
+Logic Pro: create a Software Instrument track and choose
+AU Instruments > Henrik Juhl > Progrezzor. Its own preview sounds play the chords. Drag the MIDI tile onto a
+track with the synth you want, then bypass Progrezzor there.
+Logic Pro, MIDI FX: on a Software Instrument track with any instrument, click the MIDI FX slot and choose
+Audio Units > Henrik Juhl > Progrezzor MIDI FX. The pads now play that instrument directly. The preview sound menu
+has no effect here.
+If Logic does not show it, open Logic Pro > Settings > Plug-in Manager and press "Reset & Rescan Selection".
